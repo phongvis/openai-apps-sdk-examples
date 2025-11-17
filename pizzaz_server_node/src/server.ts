@@ -4,6 +4,7 @@ import {
   type ServerResponse,
 } from "node:http";
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import path from "node:path";
 import { URL, fileURLToPath } from "node:url";
 
@@ -39,6 +40,79 @@ type PizzazWidget = {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, "..", "..");
 const ASSETS_DIR = path.resolve(ROOT_DIR, "assets");
+const ASSETS_PREFIX = "/assets/";
+
+const MIME_TYPES: Record<string, string> = {
+  ".css": "text/css",
+  ".html": "text/html",
+  ".js": "application/javascript",
+  ".json": "application/json",
+  ".map": "application/json",
+};
+
+function getMimeType(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  return MIME_TYPES[ext] ?? "application/octet-stream";
+}
+
+async function tryServeAsset(
+  url: URL,
+  res: ServerResponse,
+  isHead: boolean
+): Promise<boolean> {
+  if (!url.pathname.startsWith(ASSETS_PREFIX)) {
+    return false;
+  }
+
+  const relativePath = url.pathname.slice(ASSETS_PREFIX.length);
+  const resolvedPath = path.resolve(ASSETS_DIR, relativePath);
+  const relativeToAssets = path.relative(ASSETS_DIR, resolvedPath);
+
+  if (relativeToAssets.startsWith("..") || path.isAbsolute(relativeToAssets)) {
+    res.writeHead(403).end("Forbidden");
+    return true;
+  }
+
+  try {
+    const stats = await fsPromises.stat(resolvedPath);
+
+    if (!stats.isFile()) {
+      res.writeHead(404).end("Not Found");
+      return true;
+    }
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cache-Control", "public, max-age=1800");
+    res.setHeader("Content-Type", getMimeType(resolvedPath));
+    res.setHeader("ngrok-skip-browser-warning", "true");
+
+    if (isHead) {
+      res.writeHead(200).end();
+      return true;
+    }
+
+    const stream = fs.createReadStream(resolvedPath);
+    stream.on("error", (error) => {
+      console.error("Asset stream error", error);
+      if (!res.headersSent) {
+        res.writeHead(500).end("Failed to read asset");
+      } else {
+        res.end();
+      }
+    });
+    res.writeHead(200);
+  stream.pipe(res);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      res.writeHead(404).end("Not Found");
+    } else {
+      console.error("Failed to serve asset", error);
+      res.writeHead(500).end("Failed to serve asset");
+    }
+    return true;
+  }
+}
 
 function readWidgetHtml(componentName: string): string {
   if (!fs.existsSync(ASSETS_DIR)) {
@@ -343,6 +417,13 @@ const httpServer = createServer(
     }
 
     const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
+
+    if (req.method === "GET" || req.method === "HEAD") {
+      const handled = await tryServeAsset(url, res, req.method === "HEAD");
+      if (handled) {
+        return;
+      }
+    }
 
     if (
       req.method === "OPTIONS" &&

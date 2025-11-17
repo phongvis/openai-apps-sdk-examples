@@ -166,17 +166,34 @@ const defaultBaseUrl = "http://localhost:4444";
 const baseUrlCandidate = process.env.BASE_URL?.trim() ?? "";
 const baseUrlRaw = baseUrlCandidate.length > 0 ? baseUrlCandidate : defaultBaseUrl;
 const normalizedBaseUrl = baseUrlRaw.replace(/\/+$/, "") || defaultBaseUrl;
+const assetQueryRaw = process.env.ASSET_URL_QUERY?.trim() ?? "";
+const assetQuery = assetQueryRaw.replace(/^[?&]+/, "");
 console.log(`Using BASE_URL ${normalizedBaseUrl} for generated HTML`);
+if (assetQuery) {
+  console.log(`Appending ASSET_URL_QUERY ${assetQuery} to asset requests`);
+}
+
+function buildAssetUrl(base: string, fileName: string): string {
+  if (!assetQuery) {
+    return `${base}/${fileName}`;
+  }
+
+  const hasQuery = base.includes("?");
+  const joiner = hasQuery ? "&" : "?";
+  return `${base}/${fileName}${joiner}${assetQuery}`;
+}
 
 for (const name of builtNames) {
   const dir = outDir;
   const hashedHtmlPath = path.join(dir, `${name}-${h}.html`);
   const liveHtmlPath = path.join(dir, `${name}.html`);
+  const scriptHref = buildAssetUrl(normalizedBaseUrl, `${name}-${h}.js`);
+  const cssHref = buildAssetUrl(normalizedBaseUrl, `${name}-${h}.css`);
   const html = `<!doctype html>
 <html>
 <head>
-  <script type="module" src="${normalizedBaseUrl}/${name}-${h}.js"></script>
-  <link rel="stylesheet" href="${normalizedBaseUrl}/${name}-${h}.css">
+  <script type="module" src="${scriptHref}"></script>
+  <link rel="stylesheet" href="${cssHref}">
 </head>
 <body>
   <div id="${name}-root"></div>

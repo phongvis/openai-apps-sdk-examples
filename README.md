@@ -156,3 +156,6 @@ You are welcome to open issues or submit PRs to improve this app, however, pleas
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](./LICENSE) for details.
+
+
+BASE_URL=https://astatic-modesta-nonevading.ngrok-free.dev pnpm run build
