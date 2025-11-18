@@ -22,15 +22,14 @@
 - Router-aware widgets (pizzaz map) use `react-router-dom` even inside the sandbox; preserve `<BrowserRouter>` wrapping in the entry file.
 
 ## MCP Servers
-- Node server lives in `pizzaz_server_node/src/server.ts`; it exposes SSE endpoints (`GET /mcp`, `POST /mcp/messages`) using `@modelcontextprotocol/sdk` and reads widget HTML from `assets/`.
-- The server metadata helpers (`widgetMeta`) stamp the required `_meta` keys like `openai/outputTemplate`; reuse them to keep ChatGPT rendering the widget.
-- Python examples (`pizzaz_server_python/main.py`, `solar-system_server_python/main.py`) use FastMCP with `stateless_http=True`; run via `uvicorn <package>.main:app --port 8000` after installing the respective `requirements.txt`.
-- All servers validate inputs with Zod/Pydantic schemas and embed widget HTML via `TextResourceContents`; keep schema and metadata in sync with widget IDs/URIs when adding new tools.
+- The Python example (`pizzaz_server_python/main.py`) uses FastMCP with `stateless_http=True`; run via `uvicorn <package>.main:app --port 8000` after installing the respective `requirements.txt`.
+- Server metadata helpers stamp the required `_meta` keys like `openai/outputTemplate`; reuse them to keep ChatGPT rendering the widget.
+- Inputs are validated with Pydantic schemas and responses embed widget HTML via `TextResourceContents`; keep schema and metadata in sync with widget IDs/URIs when adding new tools.
 
 ## Styling & Assets
 - Tailwind v4 is injected through the Vite Tailwind plugin; global rules live in `src/index.css` and are prepended automatically by the `wrapEntryPlugin` helper in `build-all.mts`.
 - Per-widget CSS files co-located under the widget directory are auto-imported (glob `**/*.{css,pcss,scss,sass}` excluding modules); no need for manual index.css imports.
-- External styles (Mapbox, react-datepicker) are typically injected at runtime within the widget (see `todo/todo.jsx`); follow that pattern rather than editing `index.css` for niche styling.
+- External styles (Mapbox, react-datepicker) are typically injected at runtime within each widget; follow that pattern rather than editing `index.css` for niche styling.
 - Static media should be referenced by URL or placed under `assets/` if it needs bundling; hashed outputs go next to their non-hashed alias (for example `pizzaz-<hash>.html` plus `pizzaz.html`).
 
 ## Development Tips
@@ -39,4 +38,4 @@
 - When introducing a new widget/tool pair, update both `build-all.mts` (`targets` array) and the server widget registries so the MCP metadata, HTML filenames, and tool names stay aligned.
 - Keep an eye on bundle size warnings: `chunkSizeWarningLimit` is raised to 2000 KB, so crossing it likely indicates a dependency mistake.
 - For deployment, ensure the process sets `BASE_URL` to the public asset origin and that MCP responses reference the matching `ui://widget/<name>.html` URIs.
-- In my caes, set BASE_URL=https://astatic-modesta-nonevading.ngrok-free.dev:8000 npm run build
+- For deployments, export `BASE_URL=<public origin>` before running `pnpm run build` so generated HTML points at the hosted assets.
