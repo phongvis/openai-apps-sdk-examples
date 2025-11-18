@@ -1,11 +1,10 @@
 """Pizzaz demo MCP server implemented with the Python FastMCP helper.
 
-The server mirrors the Node example in this repository and exposes
-widget-backed tools that render the Pizzaz UI bundle. Each handler returns the
-HTML shell via an MCP resource and echoes the selected topping as structured
-content so the ChatGPT client can hydrate the widget. The module also wires the
-handlers into an HTTP/SSE stack so you can run the server with uvicorn on port
-8000, matching the Node transport behavior."""
+The server exposes the pizza map widget and returns the widget HTML alongside
+structured content. Each handler returns the HTML shell via an MCP resource and
+echoes the selected topping so the ChatGPT client can hydrate the widget. The
+module also wires the handlers into an HTTP/SSE stack so you can run the server
+with uvicorn on port 8000."""
 
 from __future__ import annotations
 
@@ -59,33 +58,6 @@ widgets: List[PizzazWidget] = [
         invoked="Served a fresh map",
         html=_load_widget_html("pizzaz"),
         response_text="Rendered a pizza map!",
-    ),
-    PizzazWidget(
-        identifier="pizza-carousel",
-        title="Show Pizza Carousel",
-        template_uri="ui://widget/pizza-carousel.html",
-        invoking="Carousel some spots",
-        invoked="Served a fresh carousel",
-        html=_load_widget_html("pizzaz-carousel"),
-        response_text="Rendered a pizza carousel!",
-    ),
-    PizzazWidget(
-        identifier="pizza-albums",
-        title="Show Pizza Album",
-        template_uri="ui://widget/pizza-albums.html",
-        invoking="Hand-tossing an album",
-        invoked="Served a fresh album",
-        html=_load_widget_html("pizzaz-albums"),
-        response_text="Rendered a pizza album!",
-    ),
-    PizzazWidget(
-        identifier="pizza-list",
-        title="Show Pizza List",
-        template_uri="ui://widget/pizza-list.html",
-        invoking="Hand-tossing a list",
-        invoked="Served a fresh list",
-        html=_load_widget_html("pizzaz-list"),
-        response_text="Rendered a pizza list!",
     ),
 ]
 
