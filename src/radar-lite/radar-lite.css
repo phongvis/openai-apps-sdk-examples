@@ -1,0 +1,128 @@
+.radar-lite-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.radar-lite-fullscreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+.radar-lite-card {
+  width: min(640px, 100%);
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1);
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.radar-lite-card h1 {
+  font-size: 1.75rem;
+  margin: 0;
+  color: #1a202c;
+}
+
+.radar-lite-card p {
+  margin: 0;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.radar-lite-card form {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.radar-lite-card input[type="text"] {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5f5;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.radar-lite-card input[type="text"]:focus {
+  outline: none;
+  border-color: #5a67d8;
+  box-shadow: 0 0 0 4px rgba(90, 103, 216, 0.15);
+}
+
+.radar-lite-card button {
+  padding: 0.85rem 1.5rem;
+  border-radius: 12px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #5a67d8;
+  color: white;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.radar-lite-card button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(90, 103, 216, 0.2);
+}
+
+.radar-lite-card button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.radar-lite-card button:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+
+.radar-lite-status {
+  padding: 0.85rem 1.05rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.radar-lite-status.radar-lite-loading {
+  background: #ebf4ff;
+  color: #4c51bf;
+}
+
+.radar-lite-status.radar-lite-error {
+  background: #fff5f5;
+  color: #c53030;
+}
+
+.radar-lite-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.radar-lite-result h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2d3748;
+}
+
+.radar-lite-result pre {
+  margin: 0;
+  overflow: auto;
+  max-height: 320px;
+  font-size: 0.85rem;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 1rem;
+}

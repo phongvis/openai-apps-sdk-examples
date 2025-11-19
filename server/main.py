@@ -59,6 +59,15 @@ widgets: List[PizzazWidget] = [
         html=_load_widget_html("pizzaz"),
         response_text="Rendered a pizza map!",
     ),
+    PizzazWidget(
+        identifier="radar-lite",
+        title="Check Domain Intent",
+        template_uri="ui://widget/radar-lite.html",
+        invoking="Checking domain intent",
+        invoked="Intent check complete",
+        html=_load_widget_html("radar-lite"),
+        response_text="Rendered Radar Lite widget!",
+    ),
 ]
 
 
@@ -76,10 +85,14 @@ WIDGETS_BY_URI: Dict[str, PizzazWidget] = {
 class PizzaInput(BaseModel):
     """Schema for pizza tools."""
 
-    pizza_topping: str = Field(
-        ...,
+    pizza_topping: str | None = Field(
+        None,
         alias="pizzaTopping",
         description="Topping to mention when rendering the widget.",
+    )
+    domain: str | None = Field(
+        None,
+        description="Domain to check intent for (radar-lite widget).",
     )
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
@@ -91,7 +104,7 @@ mcp = FastMCP(
 )
 
 
-TOOL_INPUT_SCHEMA: Dict[str, Any] = {
+PIZZA_TOOL_INPUT_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "properties": {
         "pizzaTopping": {
@@ -100,6 +113,18 @@ TOOL_INPUT_SCHEMA: Dict[str, Any] = {
         }
     },
     "required": ["pizzaTopping"],
+    "additionalProperties": False,
+}
+
+RADAR_TOOL_INPUT_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "domain": {
+            "type": "string",
+            "description": "Domain to check intent for.",
+        }
+    },
+    "required": ["domain"],
     "additionalProperties": False,
 }
 
@@ -132,22 +157,29 @@ def _embedded_widget_resource(widget: PizzazWidget) -> types.EmbeddedResource:
 
 @mcp._mcp_server.list_tools()
 async def _list_tools() -> List[types.Tool]:
-    return [
-        types.Tool(
-            name=widget.identifier,
-            title=widget.title,
-            description=widget.title,
-            inputSchema=deepcopy(TOOL_INPUT_SCHEMA),
-            _meta=_tool_meta(widget),
-            # To disable the approval prompt for the tools
-            annotations={
-                "destructiveHint": False,
-                "openWorldHint": False,
-                "readOnlyHint": True,
-            },
+    tools = []
+    for widget in widgets:
+        schema = (
+            RADAR_TOOL_INPUT_SCHEMA
+            if widget.identifier == "radar-lite"
+            else PIZZA_TOOL_INPUT_SCHEMA
         )
-        for widget in widgets
-    ]
+        tools.append(
+            types.Tool(
+                name=widget.identifier,
+                title=widget.title,
+                description=widget.title,
+                inputSchema=deepcopy(schema),
+                _meta=_tool_meta(widget),
+                # To disable the approval prompt for the tools
+                annotations={
+                    "destructiveHint": False,
+                    "openWorldHint": False,
+                    "readOnlyHint": True,
+                },
+            )
+        )
+    return tools
 
 
 @mcp._mcp_server.list_resources()
@@ -233,7 +265,6 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
             )
         )
 
-    topping = payload.pizza_topping
     widget_resource = _embedded_widget_resource(widget)
     meta: Dict[str, Any] = {
         "openai.com/widget": widget_resource.model_dump(mode="json"),
@@ -244,6 +275,11 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
         "openai/resultCanProduceWidget": True,
     }
 
+    if widget.identifier == "radar-lite":
+        structured_content = {"domain": payload.domain or ""}
+    else:
+        structured_content = {"pizzaTopping": payload.pizza_topping or ""}
+
     return types.ServerResult(
         types.CallToolResult(
             content=[
@@ -252,7 +288,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
                     text=widget.response_text,
                 )
             ],
-            structuredContent={"pizzaTopping": topping},
+            structuredContent=structured_content,
             _meta=meta,
         )
     )
