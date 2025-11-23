@@ -23,7 +23,7 @@ The MCP servers in this demo highlight how each tool can light up widgets by com
 
 - `src/` – Source for each widget example.
 - `assets/` – Generated HTML, JS, and CSS bundles after running the build step.
-- `pizzaz_server_python/` – Python MCP server that returns the Pizzaz widgets.
+- `server/` – Python MCP server that returns the Radar Lite widget.
 - `build-all.mts` – Vite build orchestrator that produces hashed bundles for every widget entrypoint.
 
 ## Prerequisites
@@ -70,17 +70,17 @@ pnpm run serve
 
 The assets are exposed at [`http://localhost:4444`](http://localhost:4444) with CORS enabled so that local tooling (including MCP inspectors) can fetch them.
 
-## Run the MCP servers
+## Run the MCP server
 
-The repository ships a demo MCP server that highlights the Pizzaz widget bundle. Every tool response includes plain text content, structured JSON, and `_meta.openai/outputTemplate` metadata so the Apps SDK can hydrate the matching widget.
+The repository ships a demo MCP server that highlights the Radar Lite widget. Every tool response includes plain text content, structured JSON, and `_meta.openai/outputTemplate` metadata so the Apps SDK can hydrate the matching widget.
 
-### Pizzaz Python server
+### Radar Lite Python server
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r pizzaz_server_python/requirements.txt
-uvicorn pizzaz_server_python.main:app --port 8000
+pip install -r server/requirements.txt
+uvicorn server.main:app --port 8000
 ```
 
 You can reuse the same virtual environment for all Python entry points in this repository—install the dependencies once and run whichever script you need.
@@ -107,11 +107,11 @@ You can add your app to the conversation context by selecting it in the "More" o
 
 ![more-chatgpt](https://github.com/user-attachments/assets/26852b36-7f9e-4f48-a515-aebd87173399)
 
-You can then invoke tools by asking something related. For example, for the Pizzaz app, you can ask "What are the best pizzas in town?".
+You can then invoke tools by asking something related. For example, for the Radar Lite app, you can ask "Check intent for domain google.com".
 
 ## Next steps
 
-- Customize the widget data: edit the handlers in `pizzaz_server_python/main.py` to fetch data from your systems.
+- Customize the widget data: edit the handlers in `server/main.py` to fetch data from your systems.
 - Create your own components and add them to the gallery: drop new entries into `src/` and they will be picked up automatically by the build script.
 
 ### Deploy your MCP server

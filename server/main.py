@@ -1,8 +1,8 @@
-"""Pizzaz demo MCP server implemented with the Python FastMCP helper.
+"""Radar Lite MCP server implemented with the Python FastMCP helper.
 
-The server exposes the pizza map widget and returns the widget HTML alongside
+The server exposes the radar intent widget and returns the widget HTML alongside
 structured content. Each handler returns the HTML shell via an MCP resource and
-echoes the selected topping so the ChatGPT client can hydrate the widget. The
+echoes the requested domain so the ChatGPT client can hydrate the widget. The
 module also wires the handlers into an HTTP/SSE stack so you can run the server
 with uvicorn on port 8000."""
 
@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 @dataclass(frozen=True)
-class PizzazWidget:
+class WidgetDefinition:
     identifier: str
     title: str
     template_uri: str
@@ -49,17 +49,8 @@ def _load_widget_html(component_name: str) -> str:
     )
 
 
-widgets: List[PizzazWidget] = [
-    PizzazWidget(
-        identifier="pizza-map",
-        title="Show Pizza Map",
-        template_uri="ui://widget/pizza-map.html",
-        invoking="Hand-tossing a map",
-        invoked="Served a fresh map",
-        html=_load_widget_html("pizzaz"),
-        response_text="Rendered a pizza map!",
-    ),
-    PizzazWidget(
+widgets: List[WidgetDefinition] = [
+    WidgetDefinition(
         identifier="radar-lite",
         title="Check Domain Intent",
         template_uri="ui://widget/radar-lite.html",
@@ -74,47 +65,30 @@ widgets: List[PizzazWidget] = [
 MIME_TYPE = "text/html+skybridge"
 
 
-WIDGETS_BY_ID: Dict[str, PizzazWidget] = {
+WIDGETS_BY_ID: Dict[str, WidgetDefinition] = {
     widget.identifier: widget for widget in widgets
 }
-WIDGETS_BY_URI: Dict[str, PizzazWidget] = {
+WIDGETS_BY_URI: Dict[str, WidgetDefinition] = {
     widget.template_uri: widget for widget in widgets
 }
 
 
-class PizzaInput(BaseModel):
-    """Schema for pizza tools."""
+class RadarLiteInput(BaseModel):
+    """Schema for radar-lite tool."""
 
-    pizza_topping: str | None = Field(
-        None,
-        alias="pizzaTopping",
-        description="Topping to mention when rendering the widget.",
-    )
-    domain: str | None = Field(
-        None,
-        description="Domain to check intent for (radar-lite widget).",
+    domain: str = Field(
+        ...,
+        description="Domain to check intent for.",
     )
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 mcp = FastMCP(
-    name="pizzaz-python",
+    name="radar-lite-python",
     stateless_http=True,
 )
 
-
-PIZZA_TOOL_INPUT_SCHEMA: Dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "pizzaTopping": {
-            "type": "string",
-            "description": "Topping to mention when rendering the widget.",
-        }
-    },
-    "required": ["pizzaTopping"],
-    "additionalProperties": False,
-}
 
 RADAR_TOOL_INPUT_SCHEMA: Dict[str, Any] = {
     "type": "object",
@@ -129,11 +103,11 @@ RADAR_TOOL_INPUT_SCHEMA: Dict[str, Any] = {
 }
 
 
-def _resource_description(widget: PizzazWidget) -> str:
+def _resource_description(widget: WidgetDefinition) -> str:
     return f"{widget.title} widget markup"
 
 
-def _tool_meta(widget: PizzazWidget) -> Dict[str, Any]:
+def _tool_meta(widget: WidgetDefinition) -> Dict[str, Any]:
     return {
         "openai/outputTemplate": widget.template_uri,
         "openai/toolInvocation/invoking": widget.invoking,
@@ -143,7 +117,7 @@ def _tool_meta(widget: PizzazWidget) -> Dict[str, Any]:
     }
 
 
-def _embedded_widget_resource(widget: PizzazWidget) -> types.EmbeddedResource:
+def _embedded_widget_resource(widget: WidgetDefinition) -> types.EmbeddedResource:
     return types.EmbeddedResource(
         type="resource",
         resource=types.TextResourceContents(
@@ -157,29 +131,21 @@ def _embedded_widget_resource(widget: PizzazWidget) -> types.EmbeddedResource:
 
 @mcp._mcp_server.list_tools()
 async def _list_tools() -> List[types.Tool]:
-    tools = []
-    for widget in widgets:
-        schema = (
-            RADAR_TOOL_INPUT_SCHEMA
-            if widget.identifier == "radar-lite"
-            else PIZZA_TOOL_INPUT_SCHEMA
+    return [
+        types.Tool(
+            name=widget.identifier,
+            title=widget.title,
+            description=widget.title,
+            inputSchema=deepcopy(RADAR_TOOL_INPUT_SCHEMA),
+            _meta=_tool_meta(widget),
+            annotations={
+                "destructiveHint": False,
+                "openWorldHint": False,
+                "readOnlyHint": True,
+            },
         )
-        tools.append(
-            types.Tool(
-                name=widget.identifier,
-                title=widget.title,
-                description=widget.title,
-                inputSchema=deepcopy(schema),
-                _meta=_tool_meta(widget),
-                # To disable the approval prompt for the tools
-                annotations={
-                    "destructiveHint": False,
-                    "openWorldHint": False,
-                    "readOnlyHint": True,
-                },
-            )
-        )
-    return tools
+        for widget in widgets
+    ]
 
 
 @mcp._mcp_server.list_resources()
@@ -251,7 +217,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
 
     arguments = req.params.arguments or {}
     try:
-        payload = PizzaInput.model_validate(arguments)
+        payload = RadarLiteInput.model_validate(arguments)
     except ValidationError as exc:
         return types.ServerResult(
             types.CallToolResult(
@@ -275,10 +241,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
         "openai/resultCanProduceWidget": True,
     }
 
-    if widget.identifier == "radar-lite":
-        structured_content = {"domain": payload.domain or ""}
-    else:
-        structured_content = {"pizzaTopping": payload.pizza_topping or ""}
+    structured_content = {"domain": payload.domain}
 
     return types.ServerResult(
         types.CallToolResult(

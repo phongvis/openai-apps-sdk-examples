@@ -6,7 +6,7 @@ import { queryRadarLiteIntent } from "./radarLite";
 import "./radar-lite.css";
 
 export default function App() {
-  const [domain, setDomain] = useState("redsift.com");
+  const [domain, setDomain] = useState(null);
   const [status, setStatus] = useState("idle");
   const [intent, setIntent] = useState(null);
   const [rawResponse, setRawResponse] = useState(null);
@@ -14,7 +14,6 @@ export default function App() {
 
   const displayMode = useOpenAiGlobal("displayMode");
   const toolOutput = useWidgetProps();
-  const initialDomain = toolOutput?.domain || "redsift.com";
 
   // Initialize with tool output if provided
   React.useEffect(() => {
@@ -91,7 +90,6 @@ export default function App() {
             type="text"
             value={domain}
             onChange={(event) => setDomain(event.target.value)}
-            placeholder="example.com"
             autoComplete="off"
             aria-label="Domain to inspect"
           />

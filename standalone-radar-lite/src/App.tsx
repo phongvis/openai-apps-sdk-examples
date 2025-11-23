@@ -68,7 +68,6 @@ export default function App() {
             type="text"
             value={domain}
             onChange={(event) => setDomain(event.target.value)}
-            placeholder="example.com"
             autoComplete="off"
             aria-label="Domain to inspect"
           />
