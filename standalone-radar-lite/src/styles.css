@@ -27,7 +27,7 @@ main {
 }
 
 .card {
-  width: min(640px, 100%);
+  width: min(900px, 100%);
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1);
@@ -139,4 +139,38 @@ pre {
   border-radius: 10px;
   border: 1px solid rgba(226, 232, 240, 0.8);
   padding: 1rem;
+}
+
+.tree-inline {
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.5rem;
+}
+
+.turnstile-panel {
+  margin-top: 0.75rem;
+  border: 1px dashed rgba(90, 103, 216, 0.4);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.turnstile-panel.active {
+  border-color: #5a67d8;
+  background: #f0f4ff;
+}
+
+.turnstile-panel p {
+  margin: 0;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.turnstile-anchor {
+  min-height: 70px;
+  min-width: 300px;
 }

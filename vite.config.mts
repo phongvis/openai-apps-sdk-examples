@@ -1,9 +1,11 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import fg from "fast-glob";
 import path from "node:path";
 import fs from "node:fs";
 import tailwindcss from "@tailwindcss/vite";
+import type { SummariseArgs } from "./src/radar-lite/summarise";
+import { summariseLocally } from "./src/radar-lite/summarise";
 
 function buildInputs() {
   const files = fg.sync("src/**/index.{tsx,jsx}", { dot: false });
@@ -201,11 +203,60 @@ if (!window.__vite_plugin_react_preamble_installed__) {
 
 const inputs = buildInputs();
 
-export default defineConfig(({}) => ({
+const localSummarisePlugin = (): Plugin => ({
+  name: "radar-lite-local-summarise",
+  configureServer(server) {
+    server.middlewares.use("/api/local-summarise", async (req, res, next) => {
+      if (req.method !== "POST") {
+        next();
+        return;
+      }
+
+      try {
+        const chunks: Uint8Array[] = [];
+        for await (const chunk of req) {
+          chunks.push(chunk as Uint8Array);
+        }
+
+        const body = Buffer.concat(chunks).toString() || "{}";
+        const payload = JSON.parse(body) as SummariseArgs;
+        const result = await summariseLocally(payload);
+
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(result));
+      } catch (error) {
+        server.config.logger.error(
+          `Local summarise endpoint failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        res.statusCode = 500;
+        res.setHeader("Content-Type", "application/json");
+        res.end(
+          JSON.stringify({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to summarise request",
+          })
+        );
+      }
+    });
+  },
+});
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  if (!process.env.OPENAI_API_KEY && env.OPENAI_API_KEY) {
+    process.env.OPENAI_API_KEY = env.OPENAI_API_KEY;
+  }
+
+  return {
   plugins: [
     tailwindcss(),
     react(),
     multiEntryDevEndpoints({ entries: inputs }),
+    localSummarisePlugin(),
   ],
   cacheDir: "node_modules/.vite-react",
   server: {
@@ -229,4 +280,5 @@ export default defineConfig(({}) => ({
       preserveEntrySignatures: "strict",
     },
   },
-}));
+  };
+});

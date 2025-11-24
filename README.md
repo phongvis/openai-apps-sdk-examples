@@ -44,6 +44,17 @@ pre-commit install
 
 > Using npm or yarn? Install the root dependencies with your preferred client and adjust the commands below accordingly.
 
+## Environment variables
+
+Before running the widgets locally, create a `.env` file in the repository root with the Radar Lite host and your OpenAI API key (the defaults below mirror the sample deployment):
+
+```
+VITE_RADAR_LITE_HOST=https://radar-lite.redsift.cloud/web
+VITE_OPENAI_API_KEY=sk-your-openai-api-key
+```
+
+Feel free to swap the host or API key with values that point at your own infrastructure.
+
 ## Build the components gallery
 
 The components are bundled into standalone assets that the MCP servers serve as reusable UI resources.
