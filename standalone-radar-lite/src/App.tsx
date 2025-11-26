@@ -1,5 +1,6 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useCallback, useState } from 'react';
 import TreeVisualizationComponent from './components/TreeVisualizationComponent';
+import QueryHeader from './components/QueryHeader';
 import {
   executeRadarLiteToolCalls,
   queryRadarLiteIntent,
@@ -13,14 +14,11 @@ type IntentPayload = {
   [key: string]: unknown;
 };
 
-type SummaryRequestPayload = {
-  query: string;
-  toolCalls: unknown;
-  userIntent: {
-    intent: string;
-    inputs: string[];
-    scope: string;
-  };
+type AnalysisContext = {
+  intent: string | null;
+  scope: string | null;
+  inputs: string[];
+  industry: string | null;
 };
 
 const extractIntentPayload = (
@@ -73,56 +71,100 @@ const extractToolCallResults = (response: unknown): unknown => {
   return response;
 };
 
-const safeReadJson = async (response: Response): Promise<unknown> => {
-  const text = await response.text();
-
-  if (!text) {
-    return null;
+const extractInputsFromPayload = (payload: IntentPayload | null): string[] => {
+  if (!payload) {
+    return [];
   }
 
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    console.warn('Failed to parse JSON response', error);
-    return null;
+  const rawInputs = (payload as { inputs?: unknown }).inputs;
+  if (Array.isArray(rawInputs)) {
+    return rawInputs.filter(
+      (input): input is string => typeof input === 'string'
+    );
   }
+
+  if (typeof rawInputs === 'string') {
+    return [rawInputs];
+  }
+
+  return [];
 };
 
-const buildSummaryRequest = (
-  toolCallResults: unknown,
-  payload: IntentPayload,
-  query: string
-): SummaryRequestPayload | null => {
+const extractScopeFromPayload = (
+  payload: IntentPayload | null
+): string | null => {
+  if (!payload) {
+    return null;
+  }
+
+  const scopeCandidate = (payload as { scope?: unknown }).scope;
+  return typeof scopeCandidate === 'string' ? scopeCandidate : null;
+};
+
+const normalizeIndustryValue = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const lowered = trimmed.toLowerCase();
+  if (lowered === 'unknown' || lowered === 'irrelevance') {
+    return null;
+  }
+
+  return trimmed;
+};
+
+const extractIndustryFromResults = (
+  toolCallResults: unknown
+): string | null => {
   if (!toolCallResults || typeof toolCallResults !== 'object') {
     return null;
   }
 
-  const rawInputs = (payload as { inputs?: unknown }).inputs;
-  const inputs: string[] = Array.isArray(rawInputs)
-    ? rawInputs.filter((item): item is string => typeof item === 'string')
-    : typeof rawInputs === 'string'
-    ? [rawInputs]
-    : [];
+  const candidate = toolCallResults as { inputResults?: unknown };
+  const inputResults = Array.isArray(candidate.inputResults)
+    ? candidate.inputResults
+    : null;
 
-  const scopeValue =
-    typeof (payload as { scope?: unknown }).scope === 'string'
-      ? ((payload as { scope?: string }).scope as string)
-      : 'NONE';
+  if (!inputResults) {
+    return null;
+  }
 
-  const intentValue =
-    typeof payload.intent === 'string'
-      ? payload.intent.toUpperCase()
-      : 'INVALID';
+  for (const entry of inputResults) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
 
-  return {
-    query,
-    toolCalls: toolCallResults,
-    userIntent: {
-      intent: intentValue,
-      inputs,
-      scope: scopeValue,
-    },
-  };
+    const record = entry as {
+      industry?: unknown;
+      metadata?: { industry?: unknown };
+      assessment?: { industry?: unknown };
+    };
+
+    const directIndustry = normalizeIndustryValue(record.industry);
+    if (directIndustry) {
+      return directIndustry;
+    }
+
+    const metadataIndustry = normalizeIndustryValue(record.metadata?.industry);
+    if (metadataIndustry) {
+      return metadataIndustry;
+    }
+
+    const assessmentIndustry = normalizeIndustryValue(
+      record.assessment?.industry
+    );
+    if (assessmentIndustry) {
+      return assessmentIndustry;
+    }
+  }
+
+  return null;
 };
 
 export default function App() {
@@ -134,15 +176,28 @@ export default function App() {
   const [summaryStatus, setSummaryStatus] = useState<RequestStatus>('idle');
   const [summaryText, setSummaryText] = useState<string | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [analysisContext, setAnalysisContext] =
+    useState<AnalysisContext | null>(null);
+  const [rawResults, setRawResults] = useState<unknown>(null);
 
   const shouldShowTree =
     status === 'success' &&
     (toolStatus === 'loading' || summaryStatus === 'loading');
-  const showCheckingBox =
-    status === 'loading' ||
-    toolStatus === 'loading' ||
-    summaryStatus === 'loading';
-  const shouldRenderResultCard = status !== 'idle';
+  const hasSummaryText = summaryStatus === 'success' && Boolean(summaryText);
+  const hasSummaryError = summaryStatus === 'error' && Boolean(summaryError);
+  const trimmedRequest = request.trim();
+  const fallbackHeaderContext: AnalysisContext | null =
+    status !== 'idle'
+      ? {
+          intent: null,
+          scope: null,
+          inputs: trimmedRequest ? [trimmedRequest] : [],
+          industry: null,
+        }
+      : null;
+  const headerContext = analysisContext ?? fallbackHeaderContext;
+  const shouldRenderResultCard =
+    shouldShowTree || hasSummaryText || hasSummaryError;
 
   const getTreePhase = (): 'idle' | 'checking' | 'error' => {
     if (
@@ -164,104 +219,159 @@ export default function App() {
     return 'idle';
   };
 
-  const runToolCalls = async (
-    payload: IntentPayload | null,
-    originalQuery: string
-  ) => {
-    if (!payload) {
-      setToolStatus('error');
-      setSummaryStatus('idle');
-      setSummaryError('Tool-call payload missing from intent response.');
-      return;
-    }
-
-    const normalizedIntent =
-      typeof payload.intent === 'string' ? payload.intent.toUpperCase() : null;
-
-    if (normalizedIntent === 'INVALID') {
-      setToolStatus('success');
-      setSummaryStatus('idle');
-      setSummaryText(null);
+  const summarizeToolCalls = useCallback(
+    async (payload: IntentPayload, query: string, toolCalls: unknown) => {
+      void payload;
+      void query;
+      void toolCalls;
+      setSummaryStatus('loading');
       setSummaryError(null);
-      return;
-    }
+      setSummaryText(null);
+      setRawResults(null);
 
-    setToolStatus('loading');
-    setSummaryError(null);
-    setSummaryStatus('idle');
-    setSummaryText(null);
+      // Placeholder summary while the remote summarise API is unavailable.
+      setSummaryText('Unable to call summary API, showing raw results.');
+      setRawResults(toolCalls);
+      setSummaryStatus('success');
+    },
+    []
+  );
 
-    try {
-      const toolResponse = await executeRadarLiteToolCalls(payload);
-      const extractedResults = extractToolCallResults(toolResponse);
-      setToolStatus('success');
-
-      if (payload && originalQuery && extractedResults) {
-        void summarizeToolCalls(payload, originalQuery, extractedResults);
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to run tool calls.';
-      setToolStatus('error');
-      setSummaryStatus('idle');
-      setSummaryError(message);
-    }
-  };
-
-  const summarizeToolCalls = async (
-    payload: IntentPayload,
-    query: string,
-    toolCalls: unknown
-  ) => {
-    setSummaryStatus('loading');
-    setSummaryError(null);
-    setSummaryText(null);
-
-    const summaryPayload = buildSummaryRequest(toolCalls, payload, query);
-
-    if (!summaryPayload) {
-      setSummaryStatus('error');
-      setSummaryError('Summary payload was incomplete.');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/local-summarise', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(summaryPayload),
-      });
-
-      if (!response.ok) {
-        const details = await safeReadJson(response);
-        const message =
-          (details as { error?: string })?.error ??
-          `Summary request failed with ${response.status}`;
-        throw new Error(message);
-      }
-
-      const json = (await safeReadJson(response)) as { message?: string };
-
-      if (json?.message) {
-        setSummaryText(json.message);
-        setSummaryStatus('success');
+  const runToolCalls = useCallback(
+    async (payload: IntentPayload | null, originalQuery: string) => {
+      if (!payload) {
+        setToolStatus('error');
+        setSummaryStatus('idle');
+        setSummaryError('Tool-call payload missing from intent response.');
         return;
       }
 
-      throw new Error('Summary response was empty.');
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to generate summary.';
-      setSummaryError(message);
-      setSummaryStatus('error');
-    }
-  };
+      const normalizedIntent =
+        typeof payload.intent === 'string'
+          ? payload.intent.toUpperCase()
+          : null;
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+      if (normalizedIntent === 'INVALID') {
+        setToolStatus('success');
+        setSummaryStatus('idle');
+        setSummaryText(null);
+        setSummaryError(null);
+        return;
+      }
+
+      setToolStatus('loading');
+      setSummaryError(null);
+      setSummaryStatus('idle');
+      setSummaryText(null);
+      setRawResults(null);
+
+      try {
+        const toolResponse = await executeRadarLiteToolCalls(payload);
+        const extractedResults = extractToolCallResults(toolResponse);
+        setRawResults(extractedResults);
+        setToolStatus('success');
+
+        const derivedIndustry = extractIndustryFromResults(extractedResults);
+        if (derivedIndustry) {
+          setAnalysisContext((previous) => {
+            if (previous) {
+              return { ...previous, industry: derivedIndustry };
+            }
+
+            return {
+              intent:
+                typeof payload.intent === 'string' ? payload.intent : null,
+              scope: extractScopeFromPayload(payload),
+              inputs: extractInputsFromPayload(payload),
+              industry: derivedIndustry,
+            };
+          });
+        }
+
+        if (payload && originalQuery && extractedResults) {
+          void summarizeToolCalls(payload, originalQuery, extractedResults);
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to run tool calls.';
+        setToolStatus('error');
+        setSummaryStatus('idle');
+        setSummaryError(message);
+      }
+    },
+    [summarizeToolCalls]
+  );
+
+  const runAnalysis = useCallback(
+    async (query: string) => {
+      const trimmed = query.trim();
+
+      if (!trimmed) {
+        setErrorMessage('Please enter a request.');
+        setStatus('error');
+        return;
+      }
+
+      setStatus('loading');
+      setErrorMessage(null);
+      setIntent(null);
+      setAnalysisContext(null);
+      setToolStatus('idle');
+      setSummaryStatus('idle');
+      setSummaryText(null);
+      setSummaryError(null);
+
+      try {
+        const response = await queryRadarLiteIntent(trimmed);
+        const normalizedResponse = response as Record<string, any>;
+        const detectedIntent =
+          normalizedResponse?.data?.intent ??
+          normalizedResponse?.data?.results?.intent ??
+          normalizedResponse?.intent ??
+          normalizedResponse?.results?.intent ??
+          null;
+
+        setIntent(
+          typeof detectedIntent === 'string'
+            ? detectedIntent
+            : Array.isArray(detectedIntent)
+            ? detectedIntent.join(', ')
+            : null
+        );
+        setStatus('success');
+
+        const payloadForToolCalls = extractIntentPayload(response);
+        if (payloadForToolCalls) {
+          const derivedInputs = extractInputsFromPayload(payloadForToolCalls);
+          const derivedScope = extractScopeFromPayload(payloadForToolCalls);
+          const derivedIntentValue =
+            typeof payloadForToolCalls.intent === 'string'
+              ? payloadForToolCalls.intent
+              : typeof detectedIntent === 'string'
+              ? detectedIntent
+              : null;
+
+          setAnalysisContext({
+            intent: derivedIntentValue,
+            scope: derivedScope,
+            inputs: derivedInputs,
+            industry: null,
+          });
+        }
+
+        void runToolCalls(payloadForToolCalls, trimmed);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        setErrorMessage(message);
+        setStatus('error');
+      }
+    },
+    [runToolCalls]
+  );
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // The input is a free-form user request that will be parsed for intent.
     const trimmed = request.trim();
 
     if (!trimmed) {
@@ -270,41 +380,8 @@ export default function App() {
       return;
     }
 
-    setStatus('loading');
     setErrorMessage(null);
-    setIntent(null);
-    setToolStatus('idle');
-    setSummaryStatus('idle');
-    setSummaryText(null);
-    setSummaryError(null);
-
-    try {
-      const response = await queryRadarLiteIntent(trimmed);
-      const normalizedResponse = response as Record<string, any>;
-      const detectedIntent =
-        normalizedResponse?.data?.intent ??
-        normalizedResponse?.data?.results?.intent ??
-        normalizedResponse?.intent ??
-        normalizedResponse?.results?.intent ??
-        null;
-
-      setIntent(
-        typeof detectedIntent === 'string'
-          ? detectedIntent
-          : Array.isArray(detectedIntent)
-          ? detectedIntent.join(', ')
-          : null
-      );
-      setStatus('success');
-
-      const payloadForToolCalls = extractIntentPayload(response);
-      void runToolCalls(payloadForToolCalls, trimmed);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      setErrorMessage(message);
-      setStatus('error');
-    }
+    void runAnalysis(trimmed);
   };
 
   return (
@@ -328,13 +405,17 @@ export default function App() {
           <div className="status error">{errorMessage}</div>
         )}
 
+        {headerContext && (
+          <QueryHeader
+            intent={headerContext.intent}
+            scope={headerContext.scope}
+            inputs={headerContext.inputs}
+            industry={headerContext.industry}
+          />
+        )}
+
         {shouldRenderResultCard && (
           <div className="result">
-            {showCheckingBox && (
-              <div>
-                <h2>Evaluating security...</h2>
-              </div>
-            )}
             {shouldShowTree && (
               <div className="tree-inline">
                 <TreeVisualizationComponent
@@ -343,15 +424,31 @@ export default function App() {
                 />
               </div>
             )}
-            {status === 'success' &&
-              summaryStatus === 'success' &&
-              summaryText && (
-                <div>
-                  <h2>Summary</h2>
-                  <p>{summaryText}</p>
-                </div>
-              )}
-            {summaryStatus === 'error' && summaryError && (
+            {hasSummaryText && (
+              <div>
+                <h2>Summary</h2>
+                <p>{summaryText}</p>
+                {rawResults ? (
+                  <details>
+                    <summary>Raw results</summary>
+                    <pre>
+                      {(() => {
+                        try {
+                          return JSON.stringify(rawResults, null, 2);
+                        } catch (error) {
+                          console.warn(
+                            'Failed to stringify raw results',
+                            error
+                          );
+                          return 'Unable to display raw results.';
+                        }
+                      })()}
+                    </pre>
+                  </details>
+                ) : null}
+              </div>
+            )}
+            {hasSummaryError && (
               <div className="status error">{summaryError}</div>
             )}
           </div>

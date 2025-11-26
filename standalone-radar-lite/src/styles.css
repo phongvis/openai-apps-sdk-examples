@@ -125,8 +125,8 @@ button:disabled {
 }
 
 .result h2 {
-  margin: 0;
-  font-size: 1.1rem;
+  margin-top: 0;
+  margin-bottom: 6px;
   color: #2d3748;
 }
 
@@ -168,6 +168,21 @@ pre {
   margin: 0;
   color: #4a5568;
   font-size: 0.9rem;
+}
+
+.turnstile-panel button {
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  background: transparent;
+  color: #4c51bf;
+  border: 1px solid rgba(90, 103, 216, 0.5);
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.turnstile-panel button:hover:not(:disabled) {
+  background: rgba(90, 103, 216, 0.08);
 }
 
 .turnstile-anchor {
