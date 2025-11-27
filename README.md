@@ -145,4 +145,4 @@ You are welcome to open issues or submit PRs to improve this app, however, pleas
 
 This project is licensed under the MIT License. See [LICENSE](./LICENSE) for details.
 
-BASE_URL=https://phongvis.github.io/openai-apps-sdk-examples/assets pnpm run build
+pnpm run build:gh-pages

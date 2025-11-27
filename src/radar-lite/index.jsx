@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { useOpenAiGlobal } from "../use-openai-global";
 import { useWidgetProps } from "../use-widget-props";
+import { SET_GLOBALS_EVENT_TYPE } from "../types";
 import TreeVisualizationComponent from "./TreeVisualizationComponent";
 import QueryHeader from "./QueryHeader";
 import {
@@ -160,6 +161,20 @@ export default function App() {
 
   const displayMode = useOpenAiGlobal("displayMode");
   const toolDomain = toolOutput?.domain ?? "";
+  const devQueryString = useMemo(() => {
+    if (!import.meta.env.DEV) {
+      return null;
+    }
+
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const queryParam = params.get("query");
+    const trimmed = queryParam?.trim();
+    return trimmed ? trimmed : null;
+  }, []);
   const trimmedRequest = request.trim();
   const hasSummaryText =
     status === "success" && summaryStatus === "success" && Boolean(summaryText);
@@ -174,6 +189,27 @@ export default function App() {
         }
       : null;
   const headerContext = analysisContext ?? fallbackHeaderContext;
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    if (!devQueryString || typeof window === "undefined") {
+      return;
+    }
+
+    const nextToolOutput = { domain: devQueryString };
+
+    window.openai = window.openai || {};
+    window.openai.toolOutput = nextToolOutput;
+
+    const event = new CustomEvent(SET_GLOBALS_EVENT_TYPE, {
+      detail: { globals: { toolOutput: nextToolOutput } },
+    });
+
+    window.dispatchEvent(event);
+  }, [devQueryString]);
 
   const summarizeToolCalls = useCallback(async (payload, query, toolCalls) => {
     void payload;
@@ -335,11 +371,6 @@ export default function App() {
     }
   }, [toolDomain, request, handleCheck]);
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    void handleCheck(request);
-  };
-
   const shouldHideTreeForSummary =
     status === "success" && summaryStatus === "success" && !!summaryText;
   const shouldShowTree =
@@ -384,17 +415,6 @@ export default function App() {
         <header>
           <h1>Radar Lite</h1>
         </header>
-
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={request}
-            onChange={(event) => setRequest(event.target.value)}
-            autoComplete="off"
-            placeholder="Ask me about your domain security..."
-            aria-label="Ask Radar Lite about your domain security"
-          />
-        </form>
 
         {status === "error" && errorMessage && (
           <div className="radar-lite-status radar-lite-error">

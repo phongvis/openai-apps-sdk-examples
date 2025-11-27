@@ -52,10 +52,10 @@ def _load_widget_html(component_name: str) -> str:
 widgets: List[WidgetDefinition] = [
     WidgetDefinition(
         identifier="radar-lite",
-        title="Check Domain Intent",
+        title="Analyze Domain Security",
         template_uri="ui://widget/radar-lite.html",
-        invoking="Checking domain intent",
-        invoked="Intent check complete",
+        invoking="Analyzing domain security",
+        invoked="Analysis complete",
         html=_load_widget_html("radar-lite"),
         response_text="Rendered Radar Lite widget!",
     ),
@@ -248,7 +248,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
             content=[
                 types.TextContent(
                     type="text",
-                    text=widget.response_text,
+                    text=widget.response_text, # TODO: more meaningful response
                 )
             ],
             structuredContent=structured_content,
