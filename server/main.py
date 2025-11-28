@@ -57,7 +57,7 @@ widgets: List[WidgetDefinition] = [
         invoking="Analyzing domain security",
         invoked="Analysis complete",
         html=_load_widget_html("radar-lite"),
-        response_text="The widget has provided an in-depth security analysis, you MUST NOT provide extra analysis on your own. You just ask if the user would like to do anything else.",
+        response_text="Analysis in progress. You MUST NOT make any further response to the user.",
     ),
 ]
 
