@@ -118,7 +118,7 @@ You can add your app to the conversation context by selecting it in the "More" o
 
 ![more-chatgpt](https://github.com/user-attachments/assets/26852b36-7f9e-4f48-a515-aebd87173399)
 
-You can then invoke tools by asking something related. For example, for the Radar Lite app, you can ask "Check intent for domain google.com".
+You can then invoke tools by asking something related. For example, for the Radar Lite app, you can ask "Analyze the security of google.com".
 
 ## Next steps
 
@@ -136,6 +136,12 @@ BASE_URL=https://your-server.com
 ```
 
 This will be used to generate the HTML for the widgets so that they can serve static assets from this hosted url.
+
+When deploying to GitHub Pages (or any other static origin), you can bundle the assets with the correct `BASE_URL` in a single step:
+
+```bash
+pnpm run build:gh
+```
 
 ## Contributing
 

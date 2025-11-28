@@ -1,6 +1,6 @@
 # Radar Lite MCP server (Python)
 
-This directory packages a Python implementation of the Radar Lite demo server using the `FastMCP` helper from the official Model Context Protocol SDK. It exposes the radar intent checker as both a resource and a tool so ChatGPT can render the widget inline.
+This directory packages a Python implementation of the Radar Lite demo server using the `FastMCP` helper from the official Model Context Protocol SDK. It exposes the Radar Lite security analysis widget as both a resource and a tool so ChatGPT can render the UI inline.
 
 ## Prerequisites
 
@@ -33,7 +33,7 @@ This boots a FastAPI app with uvicorn on `http://127.0.0.1:8000` (equivalently `
 - `GET /mcp` exposes the SSE stream.
 - `POST /mcp/messages?sessionId=...` accepts follow-up messages for an active session.
 
-Cross-origin requests are allowed so you can drive the server from local tooling or the MCP Inspector. Each tool returns structured content that echoes the inspected domain plus metadata that points to the Radar Lite widget shell.
+Cross-origin requests are allowed so you can drive the server from local tooling or the MCP Inspector. Each tool returns structured content that echoes the analyzed query plus metadata that points to the Radar Lite widget shell.
 
 ## Next steps
 
@@ -41,4 +41,4 @@ Use these handlers as a starting point when wiring in real data, authentication,
 
 1. Register reusable UI resources that load static HTML bundles.
 2. Associate tools with those widgets via `_meta.openai/outputTemplate`.
-3. Ship structured JSON (the requested domain and downstream API response) alongside human-readable confirmation text.
+3. Ship structured JSON (the requested query and downstream API response) alongside human-readable confirmation text.

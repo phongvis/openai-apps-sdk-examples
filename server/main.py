@@ -1,10 +1,10 @@
 """Radar Lite MCP server implemented with the Python FastMCP helper.
 
-The server exposes the radar intent widget and returns the widget HTML alongside
-structured content. Each handler returns the HTML shell via an MCP resource and
-echoes the requested domain so the ChatGPT client can hydrate the widget. The
-module also wires the handlers into an HTTP/SSE stack so you can run the server
-with uvicorn on port 8000."""
+The server exposes the Radar Lite security analysis widget and returns the
+widget HTML alongside structured content. Each handler returns the HTML shell
+via an MCP resource and echoes the requested query so the ChatGPT client can
+hydrate the widget. The module also wires the handlers into an HTTP/SSE stack
+so you can run the server with uvicorn on port 8000."""
 
 from __future__ import annotations
 
@@ -76,9 +76,9 @@ WIDGETS_BY_URI: Dict[str, WidgetDefinition] = {
 class RadarLiteInput(BaseModel):
     """Schema for radar-lite tool."""
 
-    domain: str = Field(
+    query: str = Field(
         ...,
-        description="Domain to check intent for.",
+        description="Security query or domain to analyze.",
     )
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
@@ -93,12 +93,12 @@ mcp = FastMCP(
 RADAR_TOOL_INPUT_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "properties": {
-        "domain": {
+        "query": {
             "type": "string",
-            "description": "Domain to check intent for.",
+            "description": "Security query or domain to analyze.",
         }
     },
-    "required": ["domain"],
+    "required": ["query"],
     "additionalProperties": False,
 }
 
@@ -241,7 +241,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
         "openai/resultCanProduceWidget": True,
     }
 
-    structured_content = {"domain": payload.domain}
+    structured_content = {"query": payload.query}
 
     return types.ServerResult(
         types.CallToolResult(

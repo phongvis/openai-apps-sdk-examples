@@ -146,8 +146,8 @@ const formatRawToolResults = (value) => {
 
 export default function App() {
   const toolOutput = useWidgetProps();
-  const initialDomain = toolOutput?.domain ?? "";
-  const [request, setRequest] = useState(initialDomain);
+  const initialQuery = toolOutput?.query ?? toolOutput?.domain ?? "";
+  const [request, setRequest] = useState(initialQuery);
   const [status, setStatus] = useState("idle");
   const [intent, setIntent] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -160,7 +160,7 @@ export default function App() {
   const [treeIteration, setTreeIteration] = useState(0);
 
   const displayMode = useOpenAiGlobal("displayMode");
-  const toolDomain = toolOutput?.domain ?? "";
+  const toolQuery = toolOutput?.query ?? toolOutput?.domain ?? "";
   const devQueryString = useMemo(() => {
     if (!import.meta.env.DEV) {
       return null;
@@ -199,7 +199,7 @@ export default function App() {
       return;
     }
 
-    const nextToolOutput = { domain: devQueryString };
+    const nextToolOutput = { query: devQueryString };
 
     window.openai = window.openai || {};
     window.openai.toolOutput = nextToolOutput;
@@ -365,11 +365,11 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (toolDomain && toolDomain !== request) {
-      setRequest(toolDomain);
-      void handleCheck(toolDomain);
+    if (toolQuery && toolQuery !== request) {
+      setRequest(toolQuery);
+      void handleCheck(toolQuery);
     }
-  }, [toolDomain, request, handleCheck]);
+  }, [toolQuery, request, handleCheck]);
 
   const shouldHideTreeForSummary =
     status === "success" && summaryStatus === "success" && !!summaryText;
