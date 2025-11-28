@@ -11,6 +11,20 @@ import {
 } from "./radarLite";
 import "./radar-lite.css";
 
+const SAMPLE_SUMMARY_TEXT = `Below is a sample response for redsift.com
+
+The email security posture for redsift.com is generally strong, with key protections such as DMARC, SPF, MTA-STS, TLS Reporting, and BIMI properly implemented, enhancing deliverability and defense against phishing and spoofing attacks.
+
+DMARC for redsift.com is configured with a strict “reject” policy at 100%, covering both main and subdomains. This ensures unauthorized emails are blocked, which significantly mitigates phishing risk. However, some DMARC tags like ‘pct’, ‘ri’, and ‘rf’ are marked for removal in upcoming DMARC RFC updates, so the policy should be reviewed and updated accordingly to maintain compliance.
+
+SPF is present but with a “softfail” (~all) at the end, meaning non-authorized sources are flagged but not outright rejected. While the SPF record includes multiple nested includes covering authorized mail sources (including Google Workspace and Salesforce), the “~all” qualifier is less strict than “-all” and may allow some spoofed mail to pass SPF checks, potentially weakening protection.
+
+MTA-STS is enforced, securing SMTP connections and preventing downgrade attacks. TLS Reporting is also configured, helping to monitor and respond to TLS failures.
+
+BIMI is implemented with a validated Verified Mark Certificate, enhancing brand visibility and trust in email communications.
+
+Overall, the strongest concern is the SPF policy’s use of a softfail, which could be hardened for tighter security. Additionally, reviewing DMARC to align with evolving standards will sustain long-term protection.`;
+
 const extractIntentPayload = (response) => {
   if (!response || typeof response !== "object") {
     return null;
@@ -210,8 +224,8 @@ export default function App() {
     setSummaryText(null);
     setRawResults(null);
 
-    setSummaryText("Unable to call summary API, showing raw results.");
-    setRawResults(toolCalls ?? null);
+    void toolCalls;
+    setSummaryText(SAMPLE_SUMMARY_TEXT);
     setSummaryStatus("success");
   }, []);
 
@@ -279,11 +293,11 @@ export default function App() {
   );
 
   const handleCheck = useCallback(
-    async (domainToCheck) => {
-      const trimmed = (domainToCheck ?? "").trim();
+    async (queryToCheck) => {
+      const trimmed = (queryToCheck ?? "").trim();
 
       if (!trimmed) {
-        setErrorMessage("Please enter a domain.");
+        setErrorMessage("Please enter a security query.");
         setStatus("error");
         return;
       }
@@ -437,7 +451,7 @@ export default function App() {
             {hasSummaryText && (
               <div className="radar-lite-summary">
                 <h2>Summary</h2>
-                <p>{summaryText}</p>
+                <p style={{ whiteSpace: "pre-line" }}>{summaryText}</p>
                 {rawResults && (
                   <details>
                     <summary>Tool-call results</summary>
