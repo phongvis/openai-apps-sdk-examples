@@ -179,16 +179,7 @@ export default function App() {
   const hasSummaryText =
     status === "success" && summaryStatus === "success" && Boolean(summaryText);
   const hasSummaryError = summaryStatus === "error" && Boolean(summaryError);
-  const fallbackHeaderContext =
-    status !== "idle"
-      ? {
-          intent: null,
-          scope: null,
-          inputs: trimmedRequest ? [trimmedRequest] : [],
-          industry: null,
-        }
-      : null;
-  const headerContext = analysisContext ?? fallbackHeaderContext;
+  const headerContext = analysisContext;
 
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -344,14 +335,6 @@ export default function App() {
             inputs: derivedInputs,
             industry: null,
           });
-        } else if (trimmed) {
-          setAnalysisContext({
-            intent:
-              typeof detectedIntent === "string" ? detectedIntent : null,
-            scope: null,
-            inputs: [trimmed],
-            industry: null,
-          });
         }
         void runToolCalls(payloadForToolCalls, trimmed);
       } catch (error) {
@@ -422,14 +405,22 @@ export default function App() {
           </div>
         )}
 
-        {headerContext && (
+        {headerContext ? (
           <QueryHeader
             intent={headerContext.intent}
             scope={headerContext.scope}
             inputs={headerContext.inputs}
             industry={headerContext.industry}
           />
-        )}
+        ) : status !== "idle" ? (
+          <QueryHeader
+            intent={null}
+            scope={null}
+            inputs={[]}
+            industry={null}
+            placeholder="Evaluating security…"
+          />
+        ) : null}
 
         {shouldRenderResultCard && (
           <div className="radar-lite-result">

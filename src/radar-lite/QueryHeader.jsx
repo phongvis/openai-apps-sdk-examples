@@ -65,7 +65,11 @@ const getIndustrySuffix = (industry, scope) => {
   return `, ${article} ${normalized} domain`;
 };
 
-const buildHeading = ({ intent, scope, inputs, industry }) => {
+const buildHeading = ({ intent, scope, inputs, industry, placeholder }) => {
+  if (placeholder) {
+    return placeholder;
+  }
+
   const action = getAction(scope);
   const securityType = getSecurityType(intent);
   const subjects = formatInputs(inputs) ?? "your request";
@@ -74,10 +78,10 @@ const buildHeading = ({ intent, scope, inputs, industry }) => {
   return `${action} the ${securityType} of ${subjects}${industrySuffix}`;
 };
 
-export default function QueryHeader({ intent, scope, inputs, industry }) {
+export default function QueryHeader({ intent, scope, inputs, industry, placeholder }) {
   return (
     <h2 className="radar-lite-query-header">
-      {buildHeading({ intent, scope, inputs, industry })}
+      {buildHeading({ intent, scope, inputs, industry, placeholder })}
     </h2>
   );
 }

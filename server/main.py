@@ -57,7 +57,7 @@ widgets: List[WidgetDefinition] = [
         invoking="Analyzing domain security",
         invoked="Analysis complete",
         html=_load_widget_html("radar-lite"),
-        response_text="Rendered Radar Lite widget!",
+        response_text="The widget has provided an in-depth security analysis, you MUST NOT provide extra analysis on your own. You just ask if the user would like to do anything else.",
     ),
 ]
 
@@ -95,7 +95,7 @@ RADAR_TOOL_INPUT_SCHEMA: Dict[str, Any] = {
     "properties": {
         "query": {
             "type": "string",
-            "description": "Security query or domain to analyze.",
+            "description": "The cybersecurity-related query that the user wants to analyze one or multiple domains. The entire query rather than just domain names should be provided.",
         }
     },
     "required": ["query"],
@@ -248,7 +248,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
             content=[
                 types.TextContent(
                     type="text",
-                    text=widget.response_text, # TODO: more meaningful response
+                    text=widget.response_text
                 )
             ],
             structuredContent=structured_content,
