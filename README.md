@@ -50,7 +50,6 @@ Before running the widgets locally, create a `.env` file in the repository root 
 
 ```
 VITE_RADAR_LITE_HOST=https://radar-lite.redsift.cloud/web
-VITE_OPENAI_API_KEY=sk-your-openai-api-key
 ```
 
 Feel free to swap the host or API key with values that point at your own infrastructure.
@@ -151,4 +150,4 @@ You are welcome to open issues or submit PRs to improve this app, however, pleas
 
 This project is licensed under the MIT License. See [LICENSE](./LICENSE) for details.
 
-pnpm run build:gh-pages
+pnpm run build:gh
