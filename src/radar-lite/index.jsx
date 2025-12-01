@@ -5,6 +5,7 @@ import { useWidgetProps } from "../use-widget-props";
 import { SET_GLOBALS_EVENT_TYPE } from "../types";
 import TreeVisualizationComponent from "./TreeVisualizationComponent";
 import QueryHeader from "./QueryHeader";
+import SecurityPostureSummary from "./security/SecurityPostureSummary";
 import {
   executeRadarLiteToolCalls,
   queryRadarLiteIntent,
@@ -23,7 +24,7 @@ MTA-STS is enforced, securing SMTP connections and preventing downgrade attacks.
 
 BIMI is implemented with a validated Verified Mark Certificate, enhancing brand visibility and trust in email communications.
 
-Overall, the strongest concern is the SPF policy’s use of a softfail, which could be hardened for tighter security. Additionally, reviewing DMARC to align with evolving standards will sustain long-term protection.`;
+Overall, the strongest concern is the SPF policy's use of a softfail, which could be hardened for tighter security. Additionally, reviewing DMARC to align with evolving standards will sustain long-term protection.`;
 
 const extractIntentPayload = (response) => {
   if (!response || typeof response !== "object") {
@@ -158,6 +159,54 @@ const formatRawToolResults = (value) => {
   }
 };
 
+const extractInputResults = (rawResults) => {
+  const normalizeList = (value) => {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value.filter((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return false;
+      }
+
+      const scores = entry.assessment?.scores;
+      return Array.isArray(scores) && scores.length > 0;
+    });
+  };
+
+  if (!rawResults) {
+    return [];
+  }
+
+  if (Array.isArray(rawResults)) {
+    const normalized = normalizeList(rawResults);
+    if (normalized.length > 0) {
+      return normalized;
+    }
+  }
+
+  if (typeof rawResults === "object") {
+    const direct = normalizeList(rawResults.inputResults);
+    if (direct.length > 0) {
+      return direct;
+    }
+
+    if (
+      rawResults.results &&
+      typeof rawResults.results === "object" &&
+      !Array.isArray(rawResults.results)
+    ) {
+      const nestedList = normalizeList(rawResults.results.inputResults);
+      if (nestedList.length > 0) {
+        return nestedList;
+      }
+    }
+  }
+
+  return [];
+};
+
 export default function App() {
   const toolOutput = useWidgetProps();
   const initialQuery = toolOutput?.query ?? toolOutput?.domain ?? "";
@@ -194,6 +243,20 @@ export default function App() {
     status === "success" && summaryStatus === "success" && Boolean(summaryText);
   const hasSummaryError = summaryStatus === "error" && Boolean(summaryError);
   const headerContext = analysisContext;
+  const securityInputResults = useMemo(
+    () => extractInputResults(rawResults),
+    [rawResults]
+  );
+  const securityInputsFromResults = useMemo(() => {
+    return securityInputResults
+      .map((r) => r.input || r.metadata?.input)
+      .filter(Boolean);
+  }, [securityInputResults]);
+  const securityInputs = securityInputsFromResults.length > 0 
+    ? securityInputsFromResults 
+    : (headerContext?.inputs ?? []);
+  const shouldShowSecuritySummary = securityInputResults.length > 0;
+  const derivedIndustry = analysisContext?.industry ?? null;
 
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -219,12 +282,12 @@ export default function App() {
   const summarizeToolCalls = useCallback(async (payload, query, toolCalls) => {
     void payload;
     void query;
+    void toolCalls;
     setSummaryStatus("loading");
     setSummaryError(null);
     setSummaryText(null);
-    setRawResults(null);
 
-    void toolCalls;
+    // Use sample data for demo - rawResults already set in runToolCalls
     setSummaryText(SAMPLE_SUMMARY_TEXT);
     setSummaryStatus("success");
   }, []);
@@ -258,6 +321,7 @@ export default function App() {
       try {
         const toolResponse = await executeRadarLiteToolCalls(payload);
         const extractedResults = extractToolCallResults(toolResponse);
+        
         setRawResults(extractedResults);
         setToolStatus("success");
 
@@ -450,16 +514,51 @@ export default function App() {
 
             {hasSummaryText && (
               <div className="radar-lite-summary">
-                <h2>Summary</h2>
-                <p style={{ whiteSpace: "pre-line" }}>{summaryText}</p>
-                {rawResults && (
-                  <details>
-                    <summary>Tool-call results</summary>
-                    <pre className="radar-lite-raw-results">
-                      {formatRawToolResults(rawResults)}
-                    </pre>
-                  </details>
-                )}
+                <h2 className="radar-lite-summary__header">
+                  Summary:{" "}
+                  {securityInputs.length > 0 && (
+                    <span className="radar-lite-domain-badge">
+                      {securityInputs[0]}
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        aria-label="Above average"
+                        className="radar-lite-domain-badge__trend"
+                      >
+                        <circle cx="8" cy="8" r="7" fill="#0f9d58" opacity={0.15} />
+                        <path
+                          d="M4 10 L8 6 L12 10 M8 6 L8 12"
+                          fill="none"
+                          stroke="#0f9d58"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  )}
+                </h2>
+                <div
+                  className={
+                    shouldShowSecuritySummary
+                      ? "radar-lite-summary-grid radar-lite-summary-grid--with-chart"
+                      : "radar-lite-summary-grid"
+                  }
+                >
+                  <div className="radar-lite-summary-grid__text">
+                    <p style={{ whiteSpace: "pre-line" }}>{summaryText}</p>
+                  </div>
+                  {shouldShowSecuritySummary && (
+                    <div className="radar-lite-summary-grid__chart">
+                      <SecurityPostureSummary
+                        inputs={securityInputs}
+                        inputResults={securityInputResults}
+                        fallbackIndustry={derivedIndustry}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

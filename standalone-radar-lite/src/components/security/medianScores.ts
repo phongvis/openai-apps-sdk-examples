@@ -1,0 +1,128 @@
+export type Score = {
+  category: string;
+  median_score: number;
+};
+
+export const MEDIAN_SCORES: Score[] = [
+  { category: 'dns', median_score: 0.2625 },
+  { category: 'email', median_score: 0.4818181818181818 },
+  { category: 'overall', median_score: 0.429469696969697 },
+  { category: 'reporting', median_score: -0.35 },
+  { category: 'tls', median_score: 0.478 },
+  { category: 'web', median_score: 0.4540625 },
+];
+
+export const MEDIAN_INDUSTRY_SCORES: Record<string, Score[]> = {
+  construction: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.4274962742175857 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.47575757575757577 },
+    { category: 'web', median_score: 0.4510625 },
+  ],
+  ecommerce: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.495377319230277 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.5266666666666666 },
+    { category: 'web', median_score: 0.5454099821746881 },
+  ],
+  education: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.43863349613349617 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.48947368421052634 },
+    { category: 'web', median_score: 0.4527199074074074 },
+  ],
+  entertainment: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.42454545454545456 },
+    { category: 'overall', median_score: 0.40897435897435896 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.465 },
+    { category: 'web', median_score: 0.440625 },
+  ],
+  finance: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.3909090909090909 },
+    { category: 'overall', median_score: 0.4194109882857614 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.4746031746031746 },
+    { category: 'web', median_score: 0.4514616935483871 },
+  ],
+  government: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.43687696638516316 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.4825396825396825 },
+    { category: 'web', median_score: 0.45689655172413796 },
+  ],
+  healthcare: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.43501944123631964 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.48947368421052634 },
+    { category: 'web', median_score: 0.45689655172413796 },
+  ],
+  hospitality: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.44310218871453205 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.48814229249011853 },
+    { category: 'web', median_score: 0.4617647058823529 },
+  ],
+  manufacturing: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.4818181818181818 },
+    { category: 'overall', median_score: 0.41838817132664247 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.46842105263157896 },
+    { category: 'web', median_score: 0.44525182038834954 },
+  ],
+  mining: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.43870966241360976 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.4793143990512412 },
+    { category: 'web', median_score: 0.4578125 },
+  ],
+  'real estate and rental': [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.4377773046625506 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.48564593301435405 },
+    { category: 'web', median_score: 0.45677083333333335 },
+  ],
+  'software and it': [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.4421918245688738 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.48566433566433564 },
+    { category: 'web', median_score: 0.45689655172413796 },
+  ],
+  transportation: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.4356929955290611 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.48194444444444445 },
+    { category: 'web', median_score: 0.45689655172413796 },
+  ],
+  utilities: [
+    { category: 'dns', median_score: 0.2625 },
+    { category: 'email', median_score: 0.5727272727272728 },
+    { category: 'overall', median_score: 0.44313215827411895 },
+    { category: 'reporting', median_score: -0.35 },
+    { category: 'tls', median_score: 0.48564593301435405 },
+    { category: 'web', median_score: 0.46495416348357527 },
+  ],
+};

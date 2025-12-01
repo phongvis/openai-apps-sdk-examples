@@ -46,7 +46,7 @@
 }
 
 .radar-lite-card {
-  width: min(900px, 100%);
+  width: min(1200px, 100%);
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1);
@@ -163,6 +163,30 @@
   margin: 0 0 0.5rem;
   font-size: 1.5rem;
   color: #2d3748;
+}
+
+.radar-lite-summary__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.radar-lite-domain-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: 'Menlo', 'Monaco', 'Ubuntu Mono', monospace;
+  color: #334155;
+}
+
+.radar-lite-domain-badge__trend {
+  flex-shrink: 0;
 }
 
 .radar-lite-summary p {
@@ -345,4 +369,134 @@
   .radar-lite-card button {
     width: 100%;
   }
+}
+
+/* Summary grid layout */
+.radar-lite-summary-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.radar-lite-summary-grid__text {
+  flex: 1;
+}
+
+.radar-lite-summary-grid__text details {
+  margin-top: 0.5rem;
+}
+
+.radar-lite-summary-grid__chart {
+  width: 100%;
+}
+
+@media (min-width: 860px) {
+  .radar-lite-summary-grid--with-chart {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+
+  .radar-lite-summary-grid__text {
+    flex: 1;
+  }
+
+  .radar-lite-summary-grid__chart {
+    flex: 0 0 360px;
+  }
+}
+
+/* Security visualization styles */
+.security-visualization {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  align-items: center;
+}
+
+.security-visualization__selector {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.security-visualization__selector select {
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #cbd5f5;
+  font-size: 0.95rem;
+  background: #fff;
+  width: 100%;
+}
+
+.pq-badge {
+  align-self: flex-start;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #2563eb, #7c3aed, #06b6d4);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pq-badge--dense {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+}
+
+.hexagon-graph svg {
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+}
+
+.hexagon-legend {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.hexagon-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+.hexagon-legend__indicator {
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.hexagon-legend__indicator--filled {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+}
+
+.hexagon-legend__indicator--dotted {
+  border: 1px dashed #94a3b8;
+}
+
+.security-headline {
+  padding: 0.25rem 0;
+  font-size: 0.95rem;
+  color: #1f2933;
+}
+
+.security-headline__domain {
+  font-weight: 600;
+  font-family: 'Menlo', 'Monaco', 'Ubuntu Mono', monospace;
+}
+
+.security-headline__descriptor {
+  font-weight: 700;
 }

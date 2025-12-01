@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useState } from 'react';
+import { FormEvent, useCallback, useMemo, useState } from 'react';
 import TreeVisualizationComponent from './components/TreeVisualizationComponent';
 import QueryHeader from './components/QueryHeader';
 import {
@@ -6,6 +6,9 @@ import {
   queryRadarLiteIntent,
 } from './services/radarLite';
 import { RequestStatus } from './types';
+import SecurityPostureSummary, {
+  RadarInputResult,
+} from './components/security/SecurityPostureSummary';
 
 type IntentApiResponse = Awaited<ReturnType<typeof queryRadarLiteIntent>>;
 
@@ -20,20 +23,6 @@ type AnalysisContext = {
   inputs: string[];
   industry: string | null;
 };
-
-const SAMPLE_SUMMARY_TEXT = `Below is a sample response for redsift.com
-
-The email security posture for redsift.com is generally strong, with key protections such as DMARC, SPF, MTA-STS, TLS Reporting, and BIMI properly implemented, enhancing deliverability and defense against phishing and spoofing attacks.
-
-DMARC for redsift.com is configured with a strict “reject” policy at 100%, covering both main and subdomains. This ensures unauthorized emails are blocked, which significantly mitigates phishing risk. However, some DMARC tags like ‘pct’, ‘ri’, and ‘rf’ are marked for removal in upcoming DMARC RFC updates, so the policy should be reviewed and updated accordingly to maintain compliance.
-
-SPF is present but with a “softfail” (~all) at the end, meaning non-authorized sources are flagged but not outright rejected. While the SPF record includes multiple nested includes covering authorized mail sources (including Google Workspace and Salesforce), the “~all” qualifier is less strict than “-all” and may allow some spoofed mail to pass SPF checks, potentially weakening protection.
-
-MTA-STS is enforced, securing SMTP connections and preventing downgrade attacks. TLS Reporting is also configured, helping to monitor and respond to TLS failures.
-
-BIMI is implemented with a validated Verified Mark Certificate, enhancing brand visibility and trust in email communications.
-
-Overall, the strongest concern is the SPF policy’s use of a softfail, which could be hardened for tighter security. Additionally, reviewing DMARC to align with evolving standards will sustain long-term protection.`;
 
 const extractIntentPayload = (
   response: IntentApiResponse | null
@@ -181,6 +170,61 @@ const extractIndustryFromResults = (
   return null;
 };
 
+const extractInputResults = (rawResults: unknown): RadarInputResult[] => {
+  const normalizeList = (value: unknown): RadarInputResult[] => {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value.filter((entry): entry is RadarInputResult => {
+      if (!entry || typeof entry !== 'object') {
+        return false;
+      }
+
+      const candidate = entry as RadarInputResult;
+      const scores = candidate.assessment?.scores;
+      return Array.isArray(scores) && scores.length > 0;
+    });
+  };
+
+  if (!rawResults) {
+    return [];
+  }
+
+  if (Array.isArray(rawResults)) {
+    const normalized = normalizeList(rawResults);
+    if (normalized.length > 0) {
+      return normalized;
+    }
+  }
+
+  if (typeof rawResults === 'object') {
+    const candidate = rawResults as {
+      inputResults?: unknown;
+      results?: unknown;
+    };
+
+    const direct = normalizeList(candidate.inputResults);
+    if (direct.length > 0) {
+      return direct;
+    }
+
+    if (
+      candidate.results &&
+      typeof candidate.results === 'object' &&
+      !Array.isArray(candidate.results)
+    ) {
+      const nested = candidate.results as { inputResults?: unknown };
+      const nestedList = normalizeList(nested.inputResults);
+      if (nestedList.length > 0) {
+        return nestedList;
+      }
+    }
+  }
+
+  return [];
+};
+
 export default function App() {
   const [request, setRequest] = useState('');
   const [status, setStatus] = useState<RequestStatus>('idle');
@@ -193,6 +237,10 @@ export default function App() {
   const [analysisContext, setAnalysisContext] =
     useState<AnalysisContext | null>(null);
   const [rawResults, setRawResults] = useState<unknown>(null);
+  const securityInputResults = useMemo(
+    () => extractInputResults(rawResults),
+    [rawResults]
+  );
 
   const shouldShowTree =
     status === 'success' &&
@@ -210,8 +258,11 @@ export default function App() {
         }
       : null;
   const headerContext = analysisContext ?? fallbackHeaderContext;
+  const securityInputs = headerContext?.inputs ?? [];
   const shouldRenderResultCard =
     shouldShowTree || hasSummaryText || hasSummaryError;
+  const shouldShowSecuritySummary = securityInputResults.length > 0;
+  const derivedIndustry = analysisContext?.industry ?? null;
 
   const getTreePhase = (): 'idle' | 'checking' | 'error' => {
     if (
@@ -243,7 +294,9 @@ export default function App() {
       setSummaryText(null);
       setRawResults(null);
 
-      setSummaryText(SAMPLE_SUMMARY_TEXT);
+      // Placeholder summary while the remote summarise API is unavailable.
+      setSummaryText('Unable to call summary API, showing raw results.');
+      setRawResults(toolCalls);
       setSummaryStatus('success');
     },
     []
@@ -437,28 +490,54 @@ export default function App() {
               </div>
             )}
             {hasSummaryText && (
-              <div>
+              <div className="summary-section">
                 <h2>Summary</h2>
-                <p style={{ whiteSpace: 'pre-line' }}>{summaryText}</p>
-                {rawResults ? (
-                  <details>
-                    <summary>Raw results</summary>
-                    <pre>
-                      {(() => {
-                        try {
-                          return JSON.stringify(rawResults, null, 2);
-                        } catch (error) {
-                          console.warn(
-                            'Failed to stringify raw results',
-                            error
-                          );
-                          return 'Unable to display raw results.';
-                        }
-                      })()}
-                    </pre>
-                  </details>
-                ) : null}
+                <div
+                  className={
+                    shouldShowSecuritySummary
+                      ? 'summary-grid summary-grid--with-chart'
+                      : 'summary-grid'
+                  }
+                >
+                  <div className="summary-grid__text">
+                    <p>{summaryText}</p>
+                    {rawResults ? (
+                      <details>
+                        <summary>Raw results</summary>
+                        <pre>
+                          {(() => {
+                            try {
+                              return JSON.stringify(rawResults, null, 2);
+                            } catch (error) {
+                              console.warn(
+                                'Failed to stringify raw results',
+                                error
+                              );
+                              return 'Unable to display raw results.';
+                            }
+                          })()}
+                        </pre>
+                      </details>
+                    ) : null}
+                  </div>
+                  {shouldShowSecuritySummary && (
+                    <div className="summary-grid__chart">
+                      <SecurityPostureSummary
+                        inputs={securityInputs}
+                        inputResults={securityInputResults}
+                        fallbackIndustry={derivedIndustry}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
+            {!hasSummaryText && shouldShowSecuritySummary && (
+              <SecurityPostureSummary
+                inputs={securityInputs}
+                inputResults={securityInputResults}
+                fallbackIndustry={derivedIndustry}
+              />
             )}
             {hasSummaryError && (
               <div className="status error">{summaryError}</div>
