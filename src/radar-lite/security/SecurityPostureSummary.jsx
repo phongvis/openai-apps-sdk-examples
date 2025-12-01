@@ -76,26 +76,26 @@ const SecurityPostureSummary = ({ inputs, inputResults, fallbackIndustry }) => {
   const PostQuantumBadge = () => (
     <span className="pq-badge pq-badge--dense">
       <svg
-        width="14"
-        height="14"
+        width="16"
+        height="16"
         viewBox="0 0 20 20"
         aria-hidden="true"
         focusable="false"
       >
         <path
           d="M10 1.5l7 3v5c0 4.418-2.686 7.971-7 9-4.314-1.029-7-4.582-7-9v-5z"
-          fill="currentColor"
+          fill="#fff"
         />
         <path
-          d="M8.25 10.25l2 2 3.5-3.5"
+          d="M8.25 10.25l1.5 1.5 3-3"
           fill="none"
-          stroke="#fff"
-          strokeWidth="1.6"
+          stroke="#3b82f6"
+          strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       </svg>
-      Post-Quantum Ready
+      POST-QUANTUM READY
     </span>
   );
 

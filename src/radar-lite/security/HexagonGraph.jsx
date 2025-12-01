@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import TrendIndicator from './TrendIndicator';
 import { MEDIAN_INDUSTRY_SCORES, MEDIAN_SCORES } from './medianScores';
-import { getTrendComparison } from './scoreComparison';
 
 const CATEGORY_ORDER = ['tls', 'web', 'email', 'reporting', 'overall', 'dns'];
 
@@ -21,15 +20,13 @@ const HexagonGraph = ({ scores, size = 300, inputLabel = 'Input data', industry 
       : MEDIAN_SCORES;
 
   const graph = useMemo(() => {
-    const svgSize = normalizedSize;
-    const center = svgSize / 2;
-    const maxRadius = svgSize * 0.35;
-    const labelArrowOffset = svgSize * 0.06;
-    const labelTextOffset = svgSize * 0.13;
-    const CATEGORY_MARGIN_ADJUSTMENTS = {
-      dns: svgSize * 0.03,
-      reporting: svgSize * 0.03,
-    };
+    const center = normalizedSize / 2;
+    const maxRadius = normalizedSize * 0.35;
+    
+    // Offsets for labels outside the hexagon
+    const arrowOffset = 15;
+    const categoryOffset = 50;
+    
     const gridLevels = [0.2, 0.4, 0.6, 0.8, 1];
 
     const getHexagonCorners = (radius) =>
@@ -84,32 +81,31 @@ const HexagonGraph = ({ scores, size = 300, inputLabel = 'Input data', industry 
     const labelPositions = outerCorners.map((corner, index) => {
       const radians = (corner.angle * Math.PI) / 180;
       const category = CATEGORY_ORDER[index];
-      const spacingAdjustment = CATEGORY_MARGIN_ADJUSTMENTS[category] || 0;
-      const arrowX =
-        center + (maxRadius + labelArrowOffset + spacingAdjustment) * Math.cos(radians);
-      const arrowY =
-        center + (maxRadius + labelArrowOffset + spacingAdjustment) * Math.sin(radians);
-      const textX =
-        center + (maxRadius + labelTextOffset + spacingAdjustment) * Math.cos(radians);
-      const textY =
-        center + (maxRadius + labelTextOffset + spacingAdjustment) * Math.sin(radians);
+      
+      const arrowX = center + (maxRadius + arrowOffset) * Math.cos(radians);
+      const arrowY = center + (maxRadius + arrowOffset) * Math.sin(radians);
+      const categoryX = center + (maxRadius + categoryOffset) * Math.cos(radians);
+      const categoryY = center + (maxRadius + categoryOffset) * Math.sin(radians);
 
       const actualValue = dataPoints[index]?.value ?? 0;
       const baselineValue = baselinePoints[index]?.value ?? 0;
+      const isAboveMedian = actualValue > baselineValue;
 
       return {
         arrowX,
         arrowY,
-        textX,
-        textY,
+        categoryX,
+        categoryY,
         category: category.toUpperCase(),
-        trend: getTrendComparison(actualValue, baselineValue),
+        isAboveMedian,
       };
     });
 
     return {
-      svgSize,
+      size: normalizedSize,
       center,
+      maxRadius,
+      outerCorners,
       gridPaths,
       dataPath: pointsToPath(dataPoints),
       baselinePath: pointsToPath(baselinePoints),
@@ -120,86 +116,105 @@ const HexagonGraph = ({ scores, size = 300, inputLabel = 'Input data', industry 
   const baselineLabel = 'Industry average';
 
   return (
-    <div className="hexagon-graph" style={{ maxWidth: '100%' }}>
-      <svg
-        viewBox={`0 0 ${graph.svgSize} ${graph.svgSize}`}
-        role="img"
-        aria-label="Security radar graph"
+    <div className="hexagon-graph">
+      <div
+        className="hexagon-graph__container"
+        style={{
+          width: graph.size,
+          height: graph.size,
+          position: 'relative',
+          margin: '20px auto',
+        }}
       >
-        <defs>
-          <linearGradient id="radarGradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.85} />
-            <stop offset="50%" stopColor="#8b5cf6" stopOpacity={0.65} />
-            <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.6} />
-          </linearGradient>
-        </defs>
+        <svg
+          viewBox={`0 0 ${graph.size} ${graph.size}`}
+          style={{ width: '100%', height: '100%', overflow: 'visible' }}
+          role="img"
+          aria-label="Security radar graph"
+        >
+          <defs>
+            <linearGradient id="radarGradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
+              <stop offset="50%" stopColor="#8b5cf6" stopOpacity={0.7} />
+              <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.6} />
+            </linearGradient>
+          </defs>
 
-        {graph.gridPaths.map((path, index) => (
-          <path
-            key={`grid-${index}`}
-            d={path}
-            fill="none"
-            stroke="#e0e7ff"
-            strokeWidth={1}
-          />
-        ))}
+          {/* Grid lines (concentric hexagons) */}
+          {graph.gridPaths.map((path, index) => (
+            <path
+              key={`grid-${index}`}
+              d={path}
+              fill="none"
+              stroke="#e9ecef"
+              strokeWidth={1}
+            />
+          ))}
 
-        {[0, 1, 2, 3, 4, 5].map((index) => {
-          const angle = (index * 60 - 60) * (Math.PI / 180);
-          const x = graph.center + graph.svgSize * 0.35 * Math.cos(angle);
-          const y = graph.center + graph.svgSize * 0.35 * Math.sin(angle);
-          return (
+          {/* Axis lines from center to corners */}
+          {graph.outerCorners.map((corner, index) => (
             <line
               key={`axis-${index}`}
               x1={graph.center}
               y1={graph.center}
-              x2={x}
-              y2={y}
-              stroke="#c7d2fe"
+              x2={corner.x}
+              y2={corner.y}
+              stroke="#e9ecef"
               strokeWidth={1}
-              strokeOpacity={0.6}
+              opacity={0.5}
             />
-          );
-        })}
+          ))}
 
-        <path
-          d={graph.baselinePath}
-          fill="none"
-          stroke="#94a3b8"
-          strokeWidth={1}
-          strokeDasharray="4 4"
-        />
-        <path
-          d={graph.dataPath}
-          fill="url(#radarGradient)"
-          stroke="#7c3aed"
-          strokeWidth={1.5}
-        />
+          {/* Median scores polygon (dotted line) */}
+          <path
+            d={graph.baselinePath}
+            fill="none"
+            stroke="#6b7280"
+            strokeWidth={1}
+            strokeDasharray="4 4"
+          />
 
-        {graph.labelPositions.map((label, index) => (
-          <g key={`label-${index}`}>
-            <text
-              x={label.textX}
-              y={label.textY}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              style={{
-                fontSize: normalizedSize <= 240 ? '10px' : '12px',
-                fontWeight: 600,
-                fill: '#334155',
-              }}
-            >
-              {label.category}
-            </text>
-            <g transform={`translate(${label.arrowX - 12}, ${label.arrowY - 12})`}>
-              <TrendIndicator comparison={label.trend} size={24} />
+          {/* Data polygon */}
+          <path
+            d={graph.dataPath}
+            fill="url(#radarGradient)"
+            stroke="#3b82f6"
+            strokeWidth={1}
+          />
+
+          {/* Category labels */}
+          {graph.labelPositions.map((label, index) => (
+            <g key={`label-${index}`}>
+              <text
+                x={label.categoryX}
+                y={label.categoryY}
+                textAnchor="middle"
+                dominantBaseline="central"
+                style={{
+                  fontFamily: "'Open Sans', sans-serif",
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  fill: '#495057',
+                }}
+              >
+                {label.category}
+              </text>
+              {/* Trend indicator */}
+              <g transform={`translate(${label.arrowX - 10}, ${label.arrowY - 10})`}>
+                <TrendIndicator
+                  comparison={label.isAboveMedian ? 'above' : 'below'}
+                  size={20}
+                />
+              </g>
             </g>
-          </g>
-        ))}
+          ))}
 
-        <circle cx={graph.center} cy={graph.center} r={2} fill="#475569" />
-      </svg>
+          {/* Center point */}
+          <circle cx={graph.center} cy={graph.center} r={2} fill="#6c757d" />
+        </svg>
+      </div>
 
+      {/* Legend */}
       <div className="hexagon-legend">
         <div className="hexagon-legend__item">
           <span className="hexagon-legend__indicator hexagon-legend__indicator--filled" />
