@@ -6,37 +6,85 @@ import { SET_GLOBALS_EVENT_TYPE } from "../types";
 import TreeVisualizationComponent from "./TreeVisualizationComponent";
 import QueryHeader from "./QueryHeader";
 import SecurityPostureSummary from "./security/SecurityPostureSummary";
-import {
-  executeRadarLiteToolCalls,
-  queryRadarLiteIntent,
-} from "./radarLite";
+// Direct API calls - used for local mock in dev mode
+import { queryRadarLiteIntent, executeRadarLiteToolCalls } from "./radarLite";
 import "./radar-lite.css";
 
-const SAMPLE_SUMMARY_TEXT = `Below is a sample response for redsift.com
+// Sample summary for dev mode mock
+const DEV_SAMPLE_SUMMARY = `The email security posture for this domain is generally strong, with key protections such as DMARC, SPF, MTA-STS, TLS Reporting, and BIMI properly implemented.
 
-The email security posture for redsift.com is generally strong, with key protections such as DMARC, SPF, MTA-STS, TLS Reporting, and BIMI properly implemented, enhancing deliverability and defense against phishing and spoofing attacks.
+DMARC is configured with a strict "reject" policy at 100%. SPF is present but uses a "softfail" (~all) qualifier. MTA-STS is enforced, and BIMI is implemented with a validated certificate.
 
-DMARC for redsift.com is configured with a strict “reject” policy at 100%, covering both main and subdomains. This ensures unauthorized emails are blocked, which significantly mitigates phishing risk. However, some DMARC tags like ‘pct’, ‘ri’, and ‘rf’ are marked for removal in upcoming DMARC RFC updates, so the policy should be reviewed and updated accordingly to maintain compliance.
+Overall, the strongest concern is the SPF policy's use of a softfail, which could be hardened for tighter security.`;
 
-SPF is present but with a “softfail” (~all) at the end, meaning non-authorized sources are flagged but not outright rejected. While the SPF record includes multiple nested includes covering authorized mail sources (including Google Workspace and Salesforce), the “~all” qualifier is less strict than “-all” and may allow some spoofed mail to pass SPF checks, potentially weakening protection.
-
-MTA-STS is enforced, securing SMTP connections and preventing downgrade attacks. TLS Reporting is also configured, helping to monitor and respond to TLS failures.
-
-BIMI is implemented with a validated Verified Mark Certificate, enhancing brand visibility and trust in email communications.
-
-Overall, the strongest concern is the SPF policy's use of a softfail, which could be hardened for tighter security. Additionally, reviewing DMARC to align with evolving standards will sustain long-term protection.`;
-
-const extractIntentPayload = (response) => {
-  if (!response || typeof response !== "object") {
-    return null;
+/**
+ * Local mock for tool calls in dev mode.
+ * Simulates the server responses using direct API calls.
+ */
+const mockToolLocally = async (name, payload) => {
+  console.log("%c🔧 [DEV MOCK] Tool call:", "color: #FF9800; font-weight: bold", name, payload);
+  
+  if (name === "fetch_intent") {
+    const response = await queryRadarLiteIntent(payload.query);
+    return {
+      structuredContent: {
+        status: "success",
+        intent_data: response?.data ?? response,
+      },
+    };
   }
-
-  const { data } = response;
-
-  if (data && typeof data === "object" && !Array.isArray(data)) {
-    return data;
+  
+  if (name === "fetch_scores") {
+    const response = await executeRadarLiteToolCalls(payload.intent_data);
+    return {
+      structuredContent: {
+        status: "success",
+        scores_data: response?.data ?? response,
+      },
+    };
   }
+  
+  if (name === "generate_summary") {
+    // In dev mode, return sample summary
+    return {
+      structuredContent: {
+        status: "complete",
+        summary: DEV_SAMPLE_SUMMARY,
+      },
+    };
+  }
+  
+  throw new Error(`Unknown tool: ${name}`);
+};
 
+/**
+ * Universal tool caller - uses openai.callTool in ChatGPT, falls back to local mock in dev.
+ * Following the todo app pattern.
+ */
+const callTool = async (name, payload) => {
+  console.log("%c═══════════════════════════════════════════════════════════", "color: #4CAF50; font-weight: bold");
+  console.log("%c🔧 CALL TOOL: " + name, "color: #4CAF50; font-weight: bold; font-size: 14px");
+  console.log("%c═══════════════════════════════════════════════════════════", "color: #4CAF50; font-weight: bold");
+  console.log("%c📥 Payload:", "color: #2196F3; font-weight: bold");
+  console.log(payload);
+  
+  const startTime = performance.now();
+  let response;
+  
+  if (window.openai?.callTool) {
+    // In ChatGPT - use the real tool
+    console.log("%c🌐 Using window.openai.callTool", "color: #9C27B0; font-weight: bold");
+    response = await window.openai.callTool(name, payload);
+  } else {
+    // In dev mode - use local mock
+    console.log("%c🔧 Using local mock (dev mode)", "color: #FF9800; font-weight: bold");
+    response = await mockToolLocally(name, payload);
+  }
+  
+  const elapsed = (performance.now() - startTime).toFixed(0);
+  console.log("%c📤 Response (" + elapsed + "ms):", "color: #4CAF50; font-weight: bold");
+  console.log(response);
+  
   return response;
 };
 
@@ -146,19 +194,6 @@ const extractIndustryFromResults = (toolCallResults) => {
   return null;
 };
 
-const formatRawToolResults = (value) => {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch (error) {
-    console.warn("Failed to stringify tool results", error);
-    return "Unable to display tool results.";
-  }
-};
-
 const extractInputResults = (rawResults) => {
   const normalizeList = (value) => {
     if (!Array.isArray(value)) {
@@ -238,7 +273,7 @@ export default function App() {
     const trimmed = queryParam?.trim();
     return trimmed ? trimmed : null;
   }, []);
-  const trimmedRequest = request.trim();
+
   const hasSummaryText =
     status === "success" && summaryStatus === "success" && Boolean(summaryText);
   const hasSummaryError = summaryStatus === "error" && Boolean(summaryError);
@@ -279,158 +314,128 @@ export default function App() {
     window.dispatchEvent(event);
   }, [devQueryString]);
 
-  const summarizeToolCalls = useCallback(async (payload, query, toolCalls) => {
-    void payload;
-    void query;
-    void toolCalls;
-    setSummaryStatus("loading");
-    setSummaryError(null);
-    setSummaryText(null);
+  /**
+   * Main analysis flow - uses callTool for every step.
+   * In ChatGPT: calls server tools via window.openai.callTool
+   * In dev mode: callTool mocks the responses using direct API calls
+   */
+  const runAnalysis = useCallback(async (query) => {
+    const trimmed = (query ?? "").trim();
+    if (!trimmed) {
+      setErrorMessage("Please enter a security query.");
+      setStatus("error");
+      return;
+    }
 
-    // Use sample data for demo - rawResults already set in runToolCalls
-    setSummaryText(SAMPLE_SUMMARY_TEXT);
-    setSummaryStatus("success");
+    // Reset state
+    setStatus("loading");
+    setErrorMessage(null);
+    setIntent(null);
+    setToolStatus("idle");
+    setSummaryStatus("idle");
+    setSummaryText(null);
+    setSummaryError(null);
+    setAnalysisContext(null);
+    setRawResults(null);
+    setTreeIteration((count) => count + 1);
+
+    try {
+      console.log("%c\n════════════════════════════════════════════════════════════", "color: #3F51B5; font-weight: bold");
+      console.log("%c🔍 RUN ANALYSIS", "color: #3F51B5; font-weight: bold; font-size: 16px");
+      console.log("%c════════════════════════════════════════════════════════════", "color: #3F51B5; font-weight: bold");
+      console.log("%c📝 Query:", "color: #2196F3; font-weight: bold", trimmed);
+
+      // Step 1: Fetch intent via callTool
+      console.log("%c⏳ Step 1: fetch_intent", "color: #FF9800; font-weight: bold");
+      const intentResponse = await callTool("fetch_intent", { query: trimmed });
+      const intentData = intentResponse?.structuredContent?.intent_data ?? intentResponse?.intent_data;
+      
+      if (!intentData) {
+        throw new Error("No intent data received");
+      }
+      
+      console.log("%c✅ Intent received:", "color: #4CAF50; font-weight: bold", intentData);
+
+      // Update UI with intent
+      const detectedIntent = intentData?.intent ?? null;
+      setIntent(typeof detectedIntent === "string" ? detectedIntent : null);
+      setStatus("success");
+
+      // Set analysis context
+      const derivedInputs = extractInputsFromPayload(intentData);
+      const derivedScope = extractScopeFromPayload(intentData);
+      setAnalysisContext({
+        intent: detectedIntent,
+        scope: derivedScope,
+        inputs: derivedInputs,
+        industry: null,
+      });
+
+      // Check for invalid intent
+      if (typeof detectedIntent === "string" && detectedIntent.toUpperCase() === "INVALID") {
+        setToolStatus("success");
+        return;
+      }
+
+      // Step 2: Fetch scores via callTool
+      console.log("%c⏳ Step 2: fetch_scores", "color: #FF9800; font-weight: bold");
+      setToolStatus("loading");
+      const scoresResponse = await callTool("fetch_scores", { intent_data: intentData });
+      const scoresData = scoresResponse?.structuredContent?.scores_data ?? scoresResponse?.scores_data;
+
+      if (!scoresData) {
+        throw new Error("No scores data received");
+      }
+
+      console.log("%c✅ Scores received:", "color: #4CAF50; font-weight: bold", scoresData);
+
+      // Update UI with scores
+      const extractedResults = extractToolCallResults(scoresData);
+      setRawResults(extractedResults);
+      setToolStatus("success");
+
+      // Extract industry
+      const derivedIndustry = extractIndustryFromResults(extractedResults);
+      if (derivedIndustry) {
+        setAnalysisContext((prev) => (prev ? { ...prev, industry: derivedIndustry } : prev));
+      }
+
+      // Step 3: Generate summary via callTool
+      console.log("%c⏳ Step 3: generate_summary", "color: #FF9800; font-weight: bold");
+      setSummaryStatus("loading");
+      const summaryResponse = await callTool("generate_summary", {
+        query: trimmed,
+        intent: detectedIntent ?? "ANY",
+        scope: derivedScope ?? "SINGLE",
+        inputs: derivedInputs ?? [],
+        tool_results: extractedResults,
+      });
+      const summary = summaryResponse?.structuredContent?.summary ?? summaryResponse?.summary;
+
+      if (summary) {
+        console.log("%c✅ Summary received:", "color: #4CAF50; font-weight: bold", summary.substring(0, 100) + "...");
+        setSummaryText(summary);
+        setSummaryStatus("success");
+      } else {
+        throw new Error("No summary received");
+      }
+
+      console.log("%c════════════════════════════════════════════════════════════\n", "color: #3F51B5; font-weight: bold");
+    } catch (error) {
+      console.error("%c❌ Analysis error:", "color: red; font-weight: bold", error);
+      const message = error instanceof Error ? error.message : "Unknown error occurred";
+      setErrorMessage(message);
+      setStatus("error");
+    }
   }, []);
 
-  const runToolCalls = useCallback(
-    async (payload, originalQuery) => {
-      if (!payload) {
-        setToolStatus("error");
-        setSummaryStatus("idle");
-        setSummaryError("Tool-call payload missing from intent response.");
-        return;
-      }
-
-      const normalizedIntent =
-        typeof payload.intent === "string" ? payload.intent.toUpperCase() : null;
-
-      if (normalizedIntent === "INVALID") {
-        setToolStatus("success");
-        setSummaryStatus("idle");
-        setSummaryText(null);
-        setSummaryError(null);
-        return;
-      }
-
-      setToolStatus("loading");
-      setSummaryError(null);
-      setSummaryStatus("idle");
-      setSummaryText(null);
-      setRawResults(null);
-
-      try {
-        const toolResponse = await executeRadarLiteToolCalls(payload);
-        const extractedResults = extractToolCallResults(toolResponse);
-        
-        setRawResults(extractedResults);
-        setToolStatus("success");
-
-        const derivedIndustry = extractIndustryFromResults(extractedResults);
-        if (derivedIndustry) {
-          setAnalysisContext((previous) => {
-            if (previous) {
-              return { ...previous, industry: derivedIndustry };
-            }
-
-            return {
-              intent:
-                typeof payload.intent === "string" ? payload.intent : null,
-              scope: extractScopeFromPayload(payload),
-              inputs: extractInputsFromPayload(payload),
-              industry: derivedIndustry,
-            };
-          });
-        }
-
-        if (payload && originalQuery && extractedResults) {
-          await summarizeToolCalls(payload, originalQuery, extractedResults);
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to run tool calls.";
-        setToolStatus("error");
-        setSummaryStatus("idle");
-        setSummaryError(message);
-      }
-    },
-    [summarizeToolCalls]
-  );
-
-  const handleCheck = useCallback(
-    async (queryToCheck) => {
-      const trimmed = (queryToCheck ?? "").trim();
-
-      if (!trimmed) {
-        setErrorMessage("Please enter a security query.");
-        setStatus("error");
-        return;
-      }
-
-      setStatus("loading");
-      setErrorMessage(null);
-      setIntent(null);
-      setToolStatus("idle");
-      setSummaryStatus("idle");
-      setSummaryText(null);
-      setSummaryError(null);
-      setAnalysisContext(null);
-      setRawResults(null);
-      setTreeIteration((count) => count + 1);
-
-      try {
-        const response = await queryRadarLiteIntent(trimmed);
-        const normalizedResponse = response ?? {};
-        const detectedIntent =
-          normalizedResponse?.data?.intent ??
-          normalizedResponse?.data?.results?.intent ??
-          normalizedResponse?.intent ??
-          normalizedResponse?.results?.intent ??
-          null;
-
-        setIntent(
-          typeof detectedIntent === "string"
-            ? detectedIntent
-            : Array.isArray(detectedIntent)
-            ? detectedIntent.join(", ")
-            : null
-        );
-        setStatus("success");
-
-        const payloadForToolCalls = extractIntentPayload(response);
-        if (payloadForToolCalls) {
-          const derivedInputs = extractInputsFromPayload(payloadForToolCalls);
-          const derivedScope = extractScopeFromPayload(payloadForToolCalls);
-          const derivedIntentValue =
-            typeof payloadForToolCalls.intent === "string"
-              ? payloadForToolCalls.intent
-              : typeof detectedIntent === "string"
-              ? detectedIntent
-              : null;
-
-          setAnalysisContext({
-            intent: derivedIntentValue,
-            scope: derivedScope,
-            inputs: derivedInputs,
-            industry: null,
-          });
-        }
-        void runToolCalls(payloadForToolCalls, trimmed);
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Unknown error occurred";
-        setErrorMessage(message);
-        setStatus("error");
-      }
-    },
-    [runToolCalls]
-  );
-
+  // Trigger analysis when toolQuery changes (from URL param in dev or from ChatGPT)
   useEffect(() => {
     if (toolQuery && toolQuery !== request) {
       setRequest(toolQuery);
-      void handleCheck(toolQuery);
+      void runAnalysis(toolQuery);
     }
-  }, [toolQuery, request, handleCheck]);
+  }, [toolQuery, request, runAnalysis]);
 
   const shouldHideTreeForSummary =
     status === "success" && summaryStatus === "success" && !!summaryText;
