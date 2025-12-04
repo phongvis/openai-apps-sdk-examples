@@ -445,13 +445,25 @@ export default function App() {
     }
   }, []);
 
-  // Trigger analysis when toolQuery changes (from URL param in dev or from ChatGPT)
+  // Trigger analysis when toolQuery is available
+  // Use a ref to track if we've started analysis to avoid double-runs
+  const hasStartedAnalysis = React.useRef(false);
+  
   useEffect(() => {
-    if (toolQuery && toolQuery !== request) {
+    console.log("%c🔄 useEffect check:", "color: #9C27B0; font-weight: bold", {
+      toolQuery,
+      request,
+      hasStartedAnalysis: hasStartedAnalysis.current,
+    });
+    
+    // Run analysis if we have a query and haven't started yet
+    if (toolQuery && !hasStartedAnalysis.current) {
+      console.log("%c▶️ Starting analysis!", "color: #4CAF50; font-weight: bold; font-size: 14px");
+      hasStartedAnalysis.current = true;
       setRequest(toolQuery);
       void runAnalysis(toolQuery);
     }
-  }, [toolQuery, request, runAnalysis]);
+  }, [toolQuery, runAnalysis]);
 
   const shouldHideTreeForSummary =
     status === "success" && summaryStatus === "success" && !!summaryText;
