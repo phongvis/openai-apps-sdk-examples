@@ -10,6 +10,15 @@ import SecurityPostureSummary from "./security/SecurityPostureSummary";
 import { queryRadarLiteIntent, executeRadarLiteToolCalls } from "./radarLite";
 import "./radar-lite.css";
 
+// Early startup logging
+console.log("%c════════════════════════════════════════════════════════════", "color: #9C27B0; font-weight: bold");
+console.log("%c🚀 RADAR-LITE WIDGET LOADING", "color: #9C27B0; font-weight: bold; font-size: 16px");
+console.log("%c════════════════════════════════════════════════════════════", "color: #9C27B0; font-weight: bold");
+console.log("%c📍 Location:", "color: #673AB7", window.location.href);
+console.log("%c🌐 window.openai:", "color: #673AB7", window.openai);
+console.log("%c🔧 window.openai?.callTool:", "color: #673AB7", typeof window.openai?.callTool);
+console.log("%c📦 window.openai?.toolOutput:", "color: #673AB7", window.openai?.toolOutput);
+
 // Sample summary for dev mode mock
 const DEV_SAMPLE_SUMMARY = `The email security posture for this domain is generally strong, with key protections such as DMARC, SPF, MTA-STS, TLS Reporting, and BIMI properly implemented.
 
@@ -243,9 +252,15 @@ const extractInputResults = (rawResults) => {
 };
 
 export default function App() {
+  console.log("%c🎬 App component rendering", "color: #00BCD4; font-weight: bold");
+  
   const toolOutput = useWidgetProps();
   console.log("%c📦 toolOutput:", "color: #E91E63; font-weight: bold; font-size: 14px", toolOutput);
+  console.log("%c📦 toolOutput type:", "color: #E91E63", typeof toolOutput);
+  console.log("%c📦 toolOutput keys:", "color: #E91E63", toolOutput ? Object.keys(toolOutput) : "null/undefined");
+  
   const initialQuery = toolOutput?.query ?? toolOutput?.domain ?? "";
+  console.log("%c📝 initialQuery:", "color: #FF5722; font-weight: bold", initialQuery || "(empty)");
   const [request, setRequest] = useState(initialQuery);
   const [status, setStatus] = useState("idle");
   const [intent, setIntent] = useState(null);
