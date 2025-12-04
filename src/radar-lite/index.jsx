@@ -432,6 +432,22 @@ export default function App() {
         console.log("%c✅ Summary received:", "color: #4CAF50; font-weight: bold", summary.substring(0, 100) + "...");
         setSummaryText(summary);
         setSummaryStatus("success");
+        
+        // Update ChatGPT's context with the completed analysis
+        // This allows ChatGPT to reference the summary in follow-up questions
+        if (window.openai?.setWidgetState) {
+          const widgetState = {
+            status: "complete",
+            query: trimmed,
+            intent: detectedIntent,
+            scope: derivedScope,
+            inputs: derivedInputs,
+            industry: derivedIndustry,
+            summary: summary,
+          };
+          console.log("%c📤 Calling setWidgetState:", "color: #9C27B0; font-weight: bold", widgetState);
+          window.openai.setWidgetState(widgetState);
+        }
       } else {
         throw new Error("No summary received");
       }
