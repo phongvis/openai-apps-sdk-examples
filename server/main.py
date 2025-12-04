@@ -618,22 +618,14 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
 
     # Return widget HTML with query - widget will call fetch_intent, fetch_scores, generate_summary
     widget_resource = _embedded_widget_resource(widget)
-    meta: Dict[str, Any] = {
-        "openai.com/widget": widget_resource.model_dump(mode="json"),
-        "openai/outputTemplate": widget.template_uri,
-        "openai/toolInvocation/invoking": widget.invoking,
-        "openai/toolInvocation/invoked": widget.invoked,
-        "openai/widgetAccessible": True,
-        "openai/resultCanProduceWidget": True,
-    }
 
     # Widget will read query from toolOutput and call tools to fetch data
     structured_content = {
         "query": payload.query,
     }
     
-    log("📤 RETURNING:")
-    log(f"   query: {payload.query}")
+    log("📤 RETURNING structuredContent (this becomes toolOutput in widget):")
+    log(json.dumps(structured_content, indent=2, default=str))
     log(f"   Widget HTML size: {len(widget.html)} bytes")
     log("═" * 60)
 
@@ -643,10 +635,11 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
                 types.TextContent(
                     type="text",
                     text=f"Starting security analysis for: {payload.query}"
-                )
+                ),
+                widget_resource,
             ],
             structuredContent=structured_content,
-            _meta=meta,
+            _meta=_tool_meta(widget),
         )
     )
 

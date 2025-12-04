@@ -244,6 +244,7 @@ const extractInputResults = (rawResults) => {
 
 export default function App() {
   const toolOutput = useWidgetProps();
+  console.log("%c📦 toolOutput:", "color: #E91E63; font-weight: bold; font-size: 14px", toolOutput);
   const initialQuery = toolOutput?.query ?? toolOutput?.domain ?? "";
   const [request, setRequest] = useState(initialQuery);
   const [status, setStatus] = useState("idle");
