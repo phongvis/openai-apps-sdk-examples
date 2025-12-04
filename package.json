@@ -1,6 +1,6 @@
 {
   "name": "ecosystem_ui",
-  "version": "5.0.16",
+  "version": "0.0.0",
   "description": "",
   "main": "host/main.ts",
   "scripts": {
