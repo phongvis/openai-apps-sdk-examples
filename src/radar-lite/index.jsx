@@ -259,7 +259,7 @@ export default function App() {
   console.log("%c📦 toolOutput type:", "color: #E91E63", typeof toolOutput);
   console.log("%c📦 toolOutput keys:", "color: #E91E63", toolOutput ? Object.keys(toolOutput) : "null/undefined");
   
-  const initialQuery = toolOutput?.query ?? toolOutput?.domain ?? "";
+  const initialQuery = toolOutput?.query ?? "";
   console.log("%c📝 initialQuery:", "color: #FF5722; font-weight: bold", initialQuery || "(empty)");
   const [request, setRequest] = useState(initialQuery);
   const [status, setStatus] = useState("idle");
@@ -274,7 +274,7 @@ export default function App() {
   const [treeIteration, setTreeIteration] = useState(0);
 
   const displayMode = useOpenAiGlobal("displayMode");
-  const toolQuery = toolOutput?.query ?? toolOutput?.domain ?? "";
+  const toolQuery = toolOutput?.query ?? "";
   const devQueryString = useMemo(() => {
     if (!import.meta.env.DEV) {
       return null;

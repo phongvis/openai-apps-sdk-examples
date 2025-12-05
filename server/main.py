@@ -35,6 +35,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 # Radar Lite API configuration
 RADAR_LITE_HOST = "https://radar-lite.redsift.cloud/web"
 
+WIDGET_RESPONSE_TEXT = "The widget is still running. Once its done, the analysis result will be displayed there. The model MUST NOT make any responses to the user to avoid confusion or redundant information."
 
 async def fetch_radar_lite_intent(query: str) -> Dict[str, Any]:
     """Call the radar-lite intent API."""
@@ -119,7 +120,7 @@ widgets: List[WidgetDefinition] = [
         invoking="Analyzing domain security",
         invoked="Analysis complete",
         html=_load_widget_html("radar-lite"),
-        response_text="Analysis in progress. You MUST NOT make any further response to the user.",
+        response_text=WIDGET_RESPONSE_TEXT,
     ),
 ]
 
@@ -622,6 +623,7 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
     # Widget will read query from toolOutput and call tools to fetch data
     structured_content = {
         "query": payload.query,
+        "aiHint": WIDGET_RESPONSE_TEXT
     }
     
     log("📤 RETURNING structuredContent (this becomes toolOutput in widget):")
