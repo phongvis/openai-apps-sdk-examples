@@ -280,29 +280,7 @@
   stroke-width: 2px;
 }
 
-.radar-lite-tree-visualization .node text {
-  fill: #1f2937;
-  font-size: 12px;
-  font-weight: 500;
-  font-family: "Space Grotesk", system-ui, sans-serif;
-  pointer-events: none;
-  dominant-baseline: central;
-}
-
-.radar-lite-tree-visualization .node.leaf text {
-  text-anchor: start;
-}
-
-.radar-lite-tree-visualization .node:not(.leaf) text {
-  text-anchor: end;
-}
-
-.radar-lite-tree-visualization .node .text-bg {
-  fill: #fafafa;
-  stroke: #fafafa;
-  stroke-width: 3;
-  opacity: 0.9;
-}
+/* Old hex-based node styles removed - now using pill-based styles below */
 
 .tree-link {
   stroke: #6b7280;
@@ -508,4 +486,189 @@
 
 .security-headline__descriptor {
   font-weight: 700;
+}
+
+/* ============================================
+   Tree Visualization Component (New Layout)
+   ============================================ */
+
+@keyframes radar-lite-traveling-dot-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes radar-lite-icon-pulse {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.15);
+  }
+}
+
+.radar-lite-tree-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 500px;
+  padding: 32px 0;
+}
+
+.radar-lite-tree-visualization {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.radar-lite-tree-visualization svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Root Node Styles */
+.radar-lite-tree-visualization .root-hex {
+  fill: #8B65FF;
+  stroke: none;
+}
+
+.radar-lite-tree-visualization .root-star {
+  fill: white;
+}
+
+.radar-lite-tree-visualization .radar-icon-animated {
+  animation: radar-lite-icon-pulse 1s ease-in-out infinite;
+}
+
+/* Pill Node Styles */
+.radar-lite-tree-visualization .node-pill {
+  stroke-width: 1.5px;
+  transition: all 0.25s ease;
+}
+
+.radar-lite-tree-visualization .node-dot {
+  transition: fill 0.25s ease, opacity 0.25s ease;
+}
+
+.radar-lite-tree-visualization .node.state-irrelevant .node-pill {
+  fill: #F4F4F6;
+  stroke: none;
+}
+
+.radar-lite-tree-visualization .node.state-irrelevant .node-dot {
+  fill: #B3CEFB;
+  opacity: 1;
+}
+
+.radar-lite-tree-visualization .node.state-checking .node-pill,
+.radar-lite-tree-visualization .node.state-checked .node-pill {
+  fill: #EFF5FF;
+  stroke: var(--Colours-Primary-Colours-Primary-Blue-L3, #B3CEFB);
+  stroke-width: 1px;
+}
+
+.radar-lite-tree-visualization .node.state-checking .node-dot,
+.radar-lite-tree-visualization .node.state-checked .node-dot {
+  fill: #4285F4;
+  opacity: 1;
+}
+
+.radar-lite-tree-visualization .node.state-intent-match .node-pill {
+  fill: #d90f47;
+  stroke: #d90f47;
+}
+
+.radar-lite-tree-visualization .node.state-intent-match .node-dot {
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+.radar-lite-tree-visualization .node.state-impacted .node-pill {
+  fill: #d90f47;
+  stroke: #d90f47;
+}
+
+.radar-lite-tree-visualization .node.state-impacted .node-dot {
+  fill: white;
+}
+
+/* Text Styles */
+.radar-lite-tree-visualization .node text {
+  font-family: "Open Sans", system-ui, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 150%;
+  pointer-events: none;
+}
+
+/* Hub Node Text Overrides */
+.radar-lite-tree-visualization .hub-node text {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 150%;
+}
+
+.radar-lite-tree-visualization .node.state-irrelevant text {
+  fill: var(--Grey-60, #6E6D83);
+}
+
+.radar-lite-tree-visualization .hub-node.state-irrelevant text {
+  fill: var(--Grey-80, #3B3A58);
+}
+
+.radar-lite-tree-visualization .node.state-checking text,
+.radar-lite-tree-visualization .node.state-checked text {
+  fill: var(--Grey-80, #3B3A58);
+}
+
+.radar-lite-tree-visualization .node.state-intent-match text {
+  fill: white;
+}
+
+.radar-lite-tree-visualization .hub-node.state-intent-match text {
+  fill: #FFF;
+}
+
+.radar-lite-tree-visualization .node.state-impacted text {
+  fill: white;
+}
+
+/* Link Styles */
+.radar-lite-tree-visualization .tree-link {
+  stroke: #D0D4E4;
+  stroke-width: 2px;
+  fill: none;
+  stroke-dasharray: 8 14;
+  stroke-linecap: butt;
+}
+
+.radar-lite-tree-visualization .tree-link.state-checking,
+.radar-lite-tree-visualization .tree-link.state-checked,
+.radar-lite-tree-visualization .tree-link.state-intent-match,
+.radar-lite-tree-visualization .tree-link.state-impacted {
+  stroke: #4D87FF;
+  stroke-width: 4px;
+  stroke-dasharray: 0 18;
+  stroke-linecap: round;
+}
+
+/* Traveling dot styles - glowing effect */
+.radar-lite-tree-visualization .traveling-dot {
+  filter: drop-shadow(0 0 4px rgba(77, 135, 255, 0.7))
+    drop-shadow(0 0 8px rgba(77, 135, 255, 0.4));
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .radar-lite-tree-container {
+    min-height: 200px;
+    padding: 20px 0;
+  }
 }
