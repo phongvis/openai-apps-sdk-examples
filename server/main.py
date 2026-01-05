@@ -124,6 +124,15 @@ widgets: List[WidgetDefinition] = [
     ),
 ]
 
+# Tool description - more explicit for ChatGPT
+RADAR_TOOL_DESCRIPTION = """Analyze email and domain security posture. Use this tool when the user asks about:
+- Email security (DMARC, SPF, DKIM, MTA-STS, BIMI)
+- Domain security analysis
+- Security posture comparisons between domains
+- DNS security configurations
+
+The tool accepts the user's full question and returns a visual security analysis widget."""
+
 
 MIME_TYPE = "text/html+skybridge"
 
@@ -185,7 +194,7 @@ RADAR_TOOL_INPUT_SCHEMA: Dict[str, Any] = {
     "properties": {
         "query": {
             "type": "string",
-            "description": "The cybersecurity-related query that the user wants to analyze one or multiple domains. The entire query rather than just domain names should be provided.",
+            "description": "The user's security-related question or domain name to analyze. Pass the full user message as-is. Examples: 'Check email security for example.com', 'Is redsift.com secure?', 'Compare DMARC of foo.com and bar.com'",
         }
     },
     "required": ["query"],
@@ -279,7 +288,7 @@ async def _list_tools() -> List[types.Tool]:
         types.Tool(
             name=widget.identifier,
             title=widget.title,
-            description=widget.title,
+            description=RADAR_TOOL_DESCRIPTION,
             inputSchema=deepcopy(RADAR_TOOL_INPUT_SCHEMA),
             _meta=_tool_meta(widget),
             annotations={
@@ -600,17 +609,42 @@ async def _call_tool_request(req: types.CallToolRequest) -> types.ServerResult:
     log("📥 RECEIVED ARGUMENTS:")
     log(json.dumps(arguments, indent=2, default=str))
 
+    # Validate input schema
     try:
         payload = RadarLiteInput.model_validate(arguments)
         log(f"✅ Payload validated: query='{payload.query}'")
     except ValidationError as exc:
         log(f"❌ Validation error: {exc.errors()}")
+        # Return user-friendly error - NO widget HTML, ask for more info
+        error_details = exc.errors()
+        missing_fields = [e.get("loc", ["unknown"])[0] for e in error_details if e.get("type") == "missing"]
+        
+        if missing_fields:
+            error_msg = f"Please provide a domain or security question to analyze. Missing: {', '.join(str(f) for f in missing_fields)}"
+        else:
+            error_msg = "Please provide a valid security query. For example: 'Check email security for example.com' or 'Is redsift.com secure?'"
+        
         return types.ServerResult(
             types.CallToolResult(
                 content=[
                     types.TextContent(
                         type="text",
-                        text=f"Input validation error: {exc.errors()}",
+                        text=error_msg,
+                    )
+                ],
+                isError=True,
+            )
+        )
+
+    # Check for empty query
+    if not payload.query or not payload.query.strip():
+        log("❌ Empty query provided")
+        return types.ServerResult(
+            types.CallToolResult(
+                content=[
+                    types.TextContent(
+                        type="text",
+                        text="Please provide a domain or security question to analyze. For example: 'Check email security for example.com' or 'Compare DMARC of foo.com and bar.com'",
                     )
                 ],
                 isError=True,

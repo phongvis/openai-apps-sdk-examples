@@ -522,10 +522,6 @@ export default function App() {
       }
     >
       <section className="radar-lite-card">
-        <header>
-          <h1>Radar Lite</h1>
-        </header>
-
         {status === "error" && errorMessage && (
           <div className="radar-lite-status radar-lite-error">
             {errorMessage}
