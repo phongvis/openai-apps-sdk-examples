@@ -559,31 +559,6 @@ export default function App() {
 
             {hasSummaryText && (
               <div className="radar-lite-summary">
-                <h2 className="radar-lite-summary__header">
-                  Summary:{" "}
-                  {securityInputs.length > 0 && (
-                    <span className="radar-lite-domain-badge">
-                      {securityInputs[0]}
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        aria-label="Above average"
-                        className="radar-lite-domain-badge__trend"
-                      >
-                        <circle cx="8" cy="8" r="7" fill="#0f9d58" opacity={0.15} />
-                        <path
-                          d="M4 10 L8 6 L12 10 M8 6 L8 12"
-                          fill="none"
-                          stroke="#0f9d58"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </span>
-                  )}
-                </h2>
                 <div
                   className={
                     shouldShowSecuritySummary
@@ -592,6 +567,31 @@ export default function App() {
                   }
                 >
                   <div className="radar-lite-summary-grid__text">
+                    <h2 className="radar-lite-summary__header">
+                      Summary:{" "}
+                      {securityInputs.length > 0 && (
+                        <span className="radar-lite-domain-badge">
+                          {securityInputs[0]}
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            aria-label="Above average"
+                            className="radar-lite-domain-badge__trend"
+                          >
+                            <circle cx="8" cy="8" r="7" fill="var(--color-green-500)" opacity={0.15} />
+                            <path
+                              d="M4 10 L8 6 L12 10 M8 6 L8 12"
+                              fill="none"
+                              stroke="var(--color-green-500)"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                    </h2>
                     <p style={{ whiteSpace: "pre-line" }}>{summaryText}</p>
                   </div>
                   {shouldShowSecuritySummary && (

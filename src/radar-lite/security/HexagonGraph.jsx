@@ -132,14 +132,6 @@ const HexagonGraph = ({ scores, size = 300, inputLabel = 'Input data', industry 
           role="img"
           aria-label="Security radar graph"
         >
-          <defs>
-            <linearGradient id="radarGradient" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
-              <stop offset="50%" stopColor="#8b5cf6" stopOpacity={0.7} />
-              <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.6} />
-            </linearGradient>
-          </defs>
-
           {/* Grid lines (concentric hexagons) */}
           {graph.gridPaths.map((path, index) => (
             <path
@@ -177,9 +169,9 @@ const HexagonGraph = ({ scores, size = 300, inputLabel = 'Input data', industry 
           {/* Data polygon */}
           <path
             d={graph.dataPath}
-            fill="url(#radarGradient)"
+            fill="rgba(59, 130, 246, 0.25)"
             stroke="#3b82f6"
-            strokeWidth={1}
+            strokeWidth={2}
           />
 
           {/* Category labels */}
@@ -191,11 +183,12 @@ const HexagonGraph = ({ scores, size = 300, inputLabel = 'Input data', industry 
                 textAnchor="middle"
                 dominantBaseline="central"
                 style={{
-                  fontFamily: "'Open Sans', sans-serif",
+                  fontFamily: 'ui-sans-serif, -apple-system, system-ui, sans-serif',
                   fontSize: '12px',
                   fontWeight: 500,
-                  fill: '#495057',
+                  fill: 'currentColor',
                 }}
+                className="fill-secondary"
               >
                 {label.category}
               </text>

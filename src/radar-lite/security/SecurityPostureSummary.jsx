@@ -84,12 +84,13 @@ const SecurityPostureSummary = ({ inputs, inputResults, fallbackIndustry }) => {
       >
         <path
           d="M10 1.5l7 3v5c0 4.418-2.686 7.971-7 9-4.314-1.029-7-4.582-7-9v-5z"
-          fill="#fff"
+          fill="currentColor"
+          className="fill-inverse"
         />
         <path
           d="M8.25 10.25l1.5 1.5 3-3"
           fill="none"
-          stroke="#3b82f6"
+          stroke="var(--color-blue-500)"
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"

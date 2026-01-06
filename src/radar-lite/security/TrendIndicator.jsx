@@ -3,11 +3,11 @@ import React from 'react';
 const getColor = (comparison) => {
   switch (comparison) {
     case 'above':
-      return '#0f9d58';
+      return 'var(--color-green-500)';
     case 'below':
-      return '#d93025';
+      return 'var(--color-red-500)';
     default:
-      return '#5f6368';
+      return 'var(--color-text-tertiary)';
   }
 };
 

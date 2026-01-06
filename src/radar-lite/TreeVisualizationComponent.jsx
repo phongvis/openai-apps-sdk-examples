@@ -162,11 +162,9 @@ class TreeVisualization {
     // Use canvas to measure actual text width if available
     if (this.context) {
       const isHub = d.isHub;
-      // Font settings matching CSS
+      // Font settings matching CSS - use system fonts
       const fontSize = isHub ? "20px" : "16px";
-      const fontFamily = isHub
-        ? '"Space Grotesk", system-ui, sans-serif'
-        : '"Open Sans", system-ui, sans-serif';
+      const fontFamily = 'ui-sans-serif, -apple-system, system-ui, "Segoe UI", "Noto Sans", sans-serif';
       const fontWeight = isHub ? "500" : "400";
 
       this.context.font = `${fontWeight} ${fontSize} ${fontFamily}`;

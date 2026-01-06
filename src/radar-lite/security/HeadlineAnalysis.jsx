@@ -3,11 +3,11 @@ import { MEDIAN_INDUSTRY_SCORES, MEDIAN_SCORES } from './medianScores';
 import { getComparisonDescriptor } from './scoreComparison';
 
 const descriptorColor = {
-  'is significantly above': '#0f9d58',
-  'is above': '#34a853',
-  matches: '#5f6368',
-  'is below': '#fbbc04',
-  'falls significantly below': '#d93025',
+  'is significantly above': 'var(--color-green-600)',
+  'is above': 'var(--color-green-500)',
+  matches: 'var(--color-text-secondary)',
+  'is below': 'var(--color-yellow-600)',
+  'falls significantly below': 'var(--color-red-600)',
 };
 
 const formatIndustryName = (industryRaw) => {
