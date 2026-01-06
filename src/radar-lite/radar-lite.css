@@ -32,7 +32,7 @@
 .radar-lite-fullscreen {
   display: flex;
   justify-content: center;
-  padding: 2rem 1rem;
+  padding: 0;
 }
 
 .radar-lite-fullscreen {
@@ -47,7 +47,7 @@
 .radar-lite-card {
   width: min(1200px, 100%);
   border-radius: var(--radius-2xl);
-  padding: 2.5rem;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -110,8 +110,8 @@
   flex-direction: column;
   gap: 0.85rem;
   border-radius: var(--radius-xl);
-  padding: 1rem;
-  border: 1px solid var(--color-border-light);
+  padding: 0;
+  border: none;
 }
 
 .radar-lite-tree-inline {
@@ -122,8 +122,8 @@
 
 .radar-lite-summary {
   border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border-light);
-  padding: 1rem;
+  border: none;
+  padding: 0;
 }
 
 .radar-lite-summary h2 {
@@ -303,7 +303,7 @@
 
 @media (max-width: 768px) {
   .radar-lite-card {
-    padding: 1.5rem;
+    padding: 0;
   }
 
   .radar-lite-card form {
