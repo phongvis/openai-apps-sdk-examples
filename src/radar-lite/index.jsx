@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { ButtonLink } from "@openai/apps-sdk-ui/components/Button";
+import { ArrowUpRight } from "@openai/apps-sdk-ui/components/Icon";
 import { useOpenAiGlobal } from "../use-openai-global";
 import { useWidgetProps } from "../use-widget-props";
 import { SET_GLOBALS_EVENT_TYPE } from "../types";
@@ -593,6 +595,16 @@ export default function App() {
                       )}
                     </h2>
                     <p style={{ whiteSpace: "pre-line" }}>{summaryText}</p>
+                    <div className="radar-lite-summary__actions">
+                      <ButtonLink
+                        color="primary"
+                        href="https://redsift.com/tools/radar-lite?resultId=4miuLqLtXDL5wZffEg9Xa3"
+                      >
+                        See detailed analysis
+
+                        <ArrowUpRight />
+                      </ButtonLink>
+                    </div>
                   </div>
                   {shouldShowSecuritySummary && (
                     <div className="radar-lite-summary-grid__chart">
