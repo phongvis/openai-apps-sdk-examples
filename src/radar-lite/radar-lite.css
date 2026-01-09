@@ -328,10 +328,22 @@
   margin-top: 0.5rem;
 }
 
+.radar-lite-summary__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.radar-lite-summary__header-row .radar-lite-summary__header {
+  margin-bottom: 0;
+}
+
 .radar-lite-summary__actions {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 1rem;
+  flex-shrink: 0;
 }
 
 .radar-lite-summary-grid__chart {
