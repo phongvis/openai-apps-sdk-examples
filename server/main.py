@@ -30,6 +30,8 @@ from pathlib import Path
 
 import mcp.types as types
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
+import inspect
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 # Radar Lite API configuration
@@ -186,6 +188,9 @@ class GenerateSummaryInput(BaseModel):
 mcp = FastMCP(
     name="radar-lite-python",
     stateless_http=True,
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False,
+    )
 )
 
 
@@ -684,25 +689,28 @@ mcp._mcp_server.request_handlers[types.CallToolRequest] = _call_tool_request
 mcp._mcp_server.request_handlers[types.ReadResourceRequest] = _handle_read_resource
 
 
-app = mcp.streamable_http_app()
+streamable_kwargs: Dict[str, Any] = {}
+try:
+    sig = inspect.signature(mcp.streamable_http_app)
+    if "allowed_hosts" in sig.parameters:
+        streamable_kwargs["allowed_hosts"] = ["*"]
+    if "trusted_hosts" in sig.parameters:
+        streamable_kwargs["trusted_hosts"] = ["*"]
+    if "allow_all_hosts" in sig.parameters:
+        streamable_kwargs["allow_all_hosts"] = True
+    if "allow_all_hostnames" in sig.parameters:
+        streamable_kwargs["allow_all_hostnames"] = True
+except Exception:
+    streamable_kwargs = {}
+
+app = mcp.streamable_http_app(**streamable_kwargs)
+if streamable_kwargs:
+    log(f"🔓 streamable_http_app kwargs={streamable_kwargs}")
 
 # Log on startup
 log("=" * 60)
 log("🚀 RADAR-LITE MCP SERVER STARTING")
 log("=" * 60)
-
-try:
-    from starlette.middleware.cors import CORSMiddleware
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-        allow_credentials=False,
-    )
-except Exception:
-    pass
 
 
 if __name__ == "__main__":

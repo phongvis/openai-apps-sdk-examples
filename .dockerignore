@@ -1,0 +1,103 @@
+# ==============================================================================
+# .dockerignore - Optimize Docker build context
+# ==============================================================================
+# This file excludes unnecessary files from the Docker build context,
+# reducing build time and final image size.
+
+# Node modules and dependencies (will be installed fresh in Docker)
+node_modules/
+.pnpm-store/
+pnpm-debug.log
+npm-debug.log
+yarn-error.log
+
+# Build outputs (we rebuild in Docker, so exclude existing builds)
+dist/
+build/
+assets/*.js
+assets/*.css
+assets/*.html
+assets/*.map
+
+# Development and cache files
+.vite/
+coverage/
+*.tsbuildinfo
+.eslintcache
+*.log
+.cache/
+
+# Environment files (should be passed as build args or env vars)
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# Editor and IDE files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Python artifacts (will be regenerated)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.venv/
+venv/
+ENV/
+env/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Git and version control
+.git/
+.gitignore
+.gitattributes
+.github/
+.pre-commit-config.yaml
+
+# Documentation (not needed in container)
+README.md
+CLAUDE.md
+LICENSE
+*.md
+docs/
+
+# Development scripts not needed in production
+dev-all.mts
+vite.host.config.mts
+
+# Standalone projects (if not needed)
+standalone-radar-lite/
+
+# Test files
+*.test.ts
+*.test.tsx
+*.test.js
+*.spec.ts
+*.spec.tsx
+*.spec.js
+__tests__/
+test/
+tests/
+
+# CI/CD files
+.circleci/
+.travis.yml
+azure-pipelines.yml
+Jenkinsfile
+
+# Claude Code
+.claude/
