@@ -2,8 +2,7 @@
 node_modules/
 .pnpm-store/
 
-# Build outputs
-dist/
+# Build outputs (excluded except web/dist for GitHub Pages)
 build/
 .vite/
 coverage/
