@@ -1,23 +1,18 @@
 # Radar Lite OpenAI App
 
-## Quick Start
-
 ```bash
 # Web (widget)
+# http://localhost:4444
 pnpm install
-pnpm run build
+pnpm run dev
 
-# Server
+# Build deployment to Github Pages
+pnpm run build:gh 
+
+# Server, port 8000
 cd server
 uv sync
 uv run main.py
-```
-
-## Development
-
-```bash
-# Web dev server with hot reload
-pnpm run dev
 
 # Inspect MCP tools
 npx @modelcontextprotocol/inspector
