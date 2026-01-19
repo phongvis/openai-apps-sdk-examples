@@ -40,8 +40,9 @@ async def log_host_headers(request, call_next):
     return await call_next(request)
 
 # Determine assets directory relative to this file
-# Container structure: /app/server/startup.py and /app/assets/
-ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+# Local structure: /server/startup.py and /web/dist/
+# Container structure: /app/server/startup.py and /app/web/dist/
+ASSETS_DIR = Path(__file__).resolve().parent.parent / "web" / "dist"
 
 cors_origins_raw = os.getenv("ASSETS_CORS_ORIGINS", "*").strip()
 cors_origins = ["*"] if cors_origins_raw == "*" else [

@@ -66,7 +66,6 @@ htmlcov/
 .gitignore
 .gitattributes
 .github/
-.pre-commit-config.yaml
 
 # Documentation (not needed in container)
 README.md

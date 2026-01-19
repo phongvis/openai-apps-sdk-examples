@@ -8,13 +8,13 @@ import pkg from "./package.json" with { type: "json" };
 import tailwindcss from "@tailwindcss/vite";
 
 const entries = fg.sync("src/**/index.{tsx,jsx}");
-const outDir = "assets";
+const outDir = "dist";
 
 const PER_ENTRY_CSS_GLOB = "**/*.{css,pcss,scss,sass}";
 const PER_ENTRY_CSS_IGNORE = "**/*.module.*".split(",").map((s) => s.trim());
 const GLOBAL_CSS_LIST = [path.resolve("src/index.css")];
 
-const targets: string[] = ["pizzaz", "radar-lite"];
+const targets: string[] = ["radar-lite"];
 const builtNames: string[] = [];
 
 function wrapEntryPlugin(
@@ -130,9 +130,9 @@ for (const file of entries) {
 }
 
 const outputs = fs
-  .readdirSync("assets")
+  .readdirSync(outDir)
   .filter((f) => f.endsWith(".js") || f.endsWith(".css"))
-  .map((f) => path.join("assets", f))
+  .map((f) => path.join(outDir, f))
   .filter((p) => fs.existsSync(p));
 
 const h = crypto

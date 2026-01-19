@@ -12,7 +12,6 @@ coverage/
 *.log
 pnpm-debug.log
 npm-debug.log
-yarn-error.log
 *.tsbuildinfo
 .eslintcache
 
@@ -32,6 +31,10 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
+venv/
+
+# Logs
+*.log
 
 # Ruff
 .ruff_cache/

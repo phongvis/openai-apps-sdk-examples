@@ -1,17 +1,15 @@
 {
-  "name": "ecosystem_ui",
+  "name": "radar-lite-web",
   "version": "0.0.2",
-  "description": "",
-  "main": "host/main.ts",
+  "description": "Radar Lite widget for ChatGPT Apps SDK",
   "scripts": {
     "build": "tsx ./build-all.mts",
-    "build:gh": "BASE_URL=https://phongvis.github.io/openai-apps-sdk-examples/assets tsx ./build-all.mts",
-    "serve": "serve -s ./assets -p 4444 --cors",
+    "build:gh": "BASE_URL=https://phongvis.github.io/openai-apps-sdk-examples/web/dist tsx ./build-all.mts",
+    "serve": "serve -s ./dist -p 4444 --cors",
     "dev": "vite --config vite.config.mts",
     "tsc": "tsc -b",
     "tsc:app": "tsc -p tsconfig.app.json",
-    "tsc:node": "tsc -p tsconfig.node.json",
-    "dev:host": "vite --config vite.host.config.mts"
+    "tsc:node": "tsc -p tsconfig.node.json"
   },
   "keywords": [],
   "author": "",
