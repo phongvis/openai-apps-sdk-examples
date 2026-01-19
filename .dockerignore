@@ -12,12 +12,9 @@ npm-debug.log
 yarn-error.log
 
 # Build outputs (we rebuild in Docker, so exclude existing builds)
-dist/
+web/dist/
 build/
-assets/*.js
-assets/*.css
-assets/*.html
-assets/*.map
+*.map
 
 # Development and cache files
 .vite/
@@ -51,15 +48,17 @@ __pycache__/
 *.so
 .Python
 *.egg-info/
+server/.venv/
 .venv/
 venv/
-ENV/
-env/
 .ruff_cache/
 .pytest_cache/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# uv lock file needed, but cache is not
+.uv/
 
 # Git and version control
 .git/
@@ -69,16 +68,10 @@ htmlcov/
 
 # Documentation (not needed in container)
 README.md
-CLAUDE.md
-LICENSE
 *.md
 docs/
 
-# Development scripts not needed in production
-dev-all.mts
-vite.host.config.mts
-
-# Standalone projects (if not needed)
+# Standalone projects (not needed in container)
 standalone-radar-lite/
 
 # Test files

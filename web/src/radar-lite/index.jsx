@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ButtonLink } from "@openai/apps-sdk-ui/components/Button";
 import { ArrowUpRight } from "@openai/apps-sdk-ui/components/Icon";
-import { useOpenAiGlobal } from "../use-openai-global";
-import { useWidgetProps } from "../use-widget-props";
+import { useOpenAiGlobal } from "../hooks/use-openai-global";
+import { useWidgetProps } from "../hooks/use-widget-props";
 import { SET_GLOBALS_EVENT_TYPE } from "../types";
-import TreeVisualizationComponent from "./TreeVisualizationComponent";
-import QueryHeader from "./QueryHeader";
-import SecurityPostureSummary from "./security/SecurityPostureSummary";
+import TreeVisualizationComponent from "../components/TreeVisualizationComponent";
+import QueryHeader from "../components/QueryHeader";
+import SecurityPostureSummary from "../components/PostureSummary";
 // Direct API calls - used for local mock in dev mode
-import { queryRadarLiteIntent, executeRadarLiteToolCalls } from "./radarLite";
+import { queryRadarLiteIntent, executeRadarLiteToolCalls } from "../services/radarLite";
 import "./radar-lite.css";
 
 // Early startup logging

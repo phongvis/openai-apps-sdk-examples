@@ -3,7 +3,7 @@ import {
   SET_GLOBALS_EVENT_TYPE,
   SetGlobalsEvent,
   type OpenAiGlobals,
-} from "./types";
+} from "../types";
 
 console.log("%c🪝 use-openai-global.ts loaded", "color: #2196F3; font-weight: bold");
 

@@ -4,8 +4,8 @@ import fg from "fast-glob";
 import path from "node:path";
 import fs from "node:fs";
 import tailwindcss from "@tailwindcss/vite";
-import type { SummariseArgs } from "./src/radar-lite/summarise";
-import { summariseLocally } from "./src/radar-lite/summarise";
+import type { SummariseArgs } from "./src/services/summarise";
+import { summariseLocally } from "./src/services/summarise";
 
 function buildInputs() {
   const files = fg.sync("src/**/index.{tsx,jsx}", { dot: false });
